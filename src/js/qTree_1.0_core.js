@@ -64,22 +64,94 @@
 			}
 		},
 		this._init = {
-			nodes: [this._initNode]
+			caches: [this._initCache],
+			nodes: [this._initNode],
+			roots: [this._initRoot],
+			afterA: [],
+			beforeA: [],
+			innerBeforeA: [],
+			innerAfterA: []
+		},
+			// methods of data
+		this.data = {
+			// cache of node
+			addNodeCache: function (setting, node) {
+				data.getCache(setting).nodes[data.getNodeCacheId(node.treeId)] = node;
+            },
+			getNodeCacheId: function (treeId) {
+				// 获取treeId在第二个"_"往后的数字
+				return treeId.substring(treeId.lastIndexOf("_") + 1);
+            },
+			addAfterA: function (afterA) {
+				this._init.afterA.push(afterA);
+            },
+			addBeforeA: function (beforeA) {
+				this._init.beforeA.push(beforeA);
+            },
+			addInnerAfterA: function (innerAfterA) {
+				this._init.innerAfterA.push(innerAfterA);
+            },
+			addInnerBeforeA: function (innerBeforeA) {
+				this._init.innerBeforeA.push(innerBeforeA);
+            }
 		}
 	}
 
 	qTree.prototype = {
+		_initRoot: function (setting){
+			var rootNode = data.getRoot(setting);
+			if(!rootNode) {
+				rootNode = {};
+				data.setRoot(setting, rootNode);
+			}
+			data.nodeChildren(setting, rootNode, []);
+			rootNode.expandTriggerFlag = false;
+			rootNode.curSelectedList = [];
+			rootNode.noSelection = true;
+			rootNode.createNodes = [];
+			rootNode.qId = 0;
+		},
+		_initCache: function (setting) {
+			var cache = data.getCache(setting);
+			if(!cache){
+				cache = {};
+				data.setCache(setting, cache);
+			}
+			cache.nodes = {};
+			cache.doms = {};
+		},
 		_initNode: function(n,setting, parentId, level, lastNode, isFirstNode, isLastNode){
 			// n，传入的node节点信息
 			if(!n){
 				return;
 			}
 			var rootNode = data.getRoot(setting, n),
-				children = data.getChildrenNode(setting, n);
+				children = data.getChildrenNode(setting, n),
+				isParent = data.nodeIsParent(setting, n);
+			// 对传入的nose节点存储信息
 			n.level = level;
-			n.treeId = setting.treeId + "_" + index;
+			// treeId = _level_index
+			n.treeId = setting.treeId + "_" + n.level + "_" + index;
 			n.parentTreeId = parentNode ? parentNode.treeId : null;
-			n.open = 
+			n.isFirstNode = isFirstNode;
+			n.isLastNode = isLastNode;
+			
+			// n具有的方法
+			n.getParentNode = function () {
+				return data.getNodeCache(setting, n.parentId);
+			};
+			n.getPreNode = function () {
+				return data.getPreNode(setting, n);
+			};
+			n.getNextNode = function () {
+				return data.getNextNode(setting, n);	
+			};
+			n.getIndex = function () {
+				return data.getNodeIndex(setting, n);	
+            };
+			n.getPath = function () {
+				return data.getNodePath(setting, n);
+            };
 		}
 	}
 
