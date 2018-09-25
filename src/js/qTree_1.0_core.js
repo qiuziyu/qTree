@@ -31,6 +31,8 @@
 			}
 		},
 		this._setting = {
+			treeId: "",
+			treeObj: null,
 			view: {
 				showIcon: true,
 				showLine: true,
@@ -58,7 +60,7 @@
 				headers: {},
 				url: "",
 				autoParam: [],
-				dataFilter: null		
+				dataFilter: null
 			}
 		},
 		this._init = {
@@ -67,8 +69,17 @@
 	}
 
 	qTree.prototype = {
-		_initNode: function(){
-
+		_initNode: function(n,setting, parentId, level, lastNode, isFirstNode, isLastNode){
+			// n，传入的node节点信息
+			if(!n){
+				return;
+			}
+			var rootNode = data.getRoot(setting, n),
+				children = data.getChildrenNode(setting, n);
+			n.level = level;
+			n.treeId = setting.treeId + "_" + index;
+			n.parentTreeId = parentNode ? parentNode.treeId : null;
+			n.open = 
 		}
 	}
 
