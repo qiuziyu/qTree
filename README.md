@@ -15,6 +15,7 @@
 		type:[folder, file],
 		parentId:父节点数据标识,
 		preId:前一个节点,
+		nextId: 后一个节点,
 		lastNode:Boolean,
 		level:层级,
 		tree_level:在每一父级下的顺序,
