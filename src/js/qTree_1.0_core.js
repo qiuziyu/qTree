@@ -63,7 +63,11 @@
 					idKey: "id",
 					pIdKey: "pId",
 					rootPId: null
-				}
+				},
+                keep: {
+                    parent: false,
+                    leaf: false
+                }
 			},
 			async: {
 				//异步参数配置
@@ -289,7 +293,7 @@
                 var key = setting.data.key.isParent;
                 if (typeof  newIsParent !== "undefined"){
                     if (typeof  newIsParent !== "string"){
-                        newIsParent = tools.eqs(newIsParent, "true");
+                        newIsParent = this.tools.eqs(newIsParent, "true");
                     }
                     newIsParent = !!newIsParent;
                     node[key] = newIsParent;
@@ -372,7 +376,7 @@
                 var result = isSingle ? null : [];
                 for (var i = 0, l = nodes.length; i < l; i++) {
                     var node = nodes[i];
-                    if (tools.apply(filter, [node, invokeParam], false)) {
+                    if (this.tools.apply(filter, [node, invokeParam], false)) {
                         if (isSingle) {
                             return node;
                         }
@@ -453,7 +457,7 @@
 			transformToArrayFormat: function (setting, nodes) {
                 if (!nodes) return [];
                 var r = [];
-                if (tools.isArray(nodes)) {
+                if (this.tools.isArray(nodes)) {
                     for (var i = 0, l = nodes.length; i < l; i++) {
                         var node = nodes[i];
                         _do(node);
@@ -478,7 +482,7 @@
                     parentKey = setting.data.simpleData.pIdKey;
                 if (!key || key == "" || !sNodes) return [];
 
-                if (tools.isArray(sNodes)) {
+                if (this.tools.isArray(sNodes)) {
                     var r = [];
                     var tmpMap = {};
                     for (i = 0, l = sNodes.length; i < l; i++) {
@@ -515,107 +519,166 @@
                 }
             },
 			bindTree: function (setting) {
-				
+				var eventParam = {
+				    treeId: setting.treeId
+                },
+                    obj = setting.treeObj;
+				if (!setting.view.txtSelectedEnable) {
+				    obj.addEventListener('selectstart', this.handler.onSelectStart).css({
+                        "-moz-user-select": "-moz-none"
+                    });
+                }
+                // TODO
+            },
+            unbindTree: function (setting) {
+              // TODO
+            },
+            doProxy: function (e) {
+                // TODO
+            },
+            proxy: function (e) {
+                //TODO
             }
-		}
-
-	}
-
-	qTree.prototype = {
-		_initRoot: function (setting){
-			var rootNode = this.data.getRoot(setting);
-			if(!rootNode) {
-				rootNode = {};
-				this.data.setRoot(setting, rootNode);
-			}
-			this.data.nodeChildren(setting, rootNode, []);
-			rootNode.expandTriggerFlag = false;
-			rootNode.curSelectedList = [];
-			rootNode.noSelection = true;
-			rootNode.createNodes = [];
-			rootNode.qId = 0;
 		},
-		_initCache: function (setting) {
-			var cache = this.data.getCache(setting);
-			if(!cache){
-				cache = {};
-				this.data.setCache(setting, cache);
-			}
-			cache.nodes = {};
-			cache.doms = {};
-		},
-		// 默认绑定事件
-		_bindEvent: function (setting){
-			var obj = setting.treeObj,
-				eventCName = consts.event;
-			obj.addEventListener(eventCName.NODECREATED, function (event, treeId, node) {
-				tools.apply(setting.callback.onNodeCreated, [event, treeId, node]);
+		this.handler = {},
+        this.tools = {},
+        this.view = {},
+        this._initRoot = function (setting){
+            var rootNode = this.data.getRoot(setting);
+            if(!rootNode) {
+                rootNode = {};
+                this.data.setRoot(setting, rootNode);
+            }
+            this.data.nodeChildren(setting, rootNode, []);
+            rootNode.expandTriggerFlag = false;
+            rootNode.curSelectedList = [];
+            rootNode.noSelection = true;
+            rootNode.createNodes = [];
+            rootNode.qId = 0;
+        },
+        this._initCache = function (setting) {
+            var cache = this.data.getCache(setting);
+            if(!cache){
+                cache = {};
+                this.data.setCache(setting, cache);
+            }
+            cache.nodes = {};
+            cache.doms = {};
+        },
+        // 默认绑定事件
+        this._bindEvent = function (setting){
+            var obj = setting.treeObj,
+                eventCName = consts.event;
+            obj.addEventListener(eventCName.NODECREATED, function (event, treeId, node) {
+                this.tools.apply(setting.callback.onNodeCreated, [event, treeId, node]);
             });
             obj.addEventListener(eventCName.CLICK, function (event, treeId, node, srcEvent, clickFlag) {
-                tools.apply(setting.callback.onClick, [srcEvent, treeId, node, clickFlag]);
+                this.tools.apply(setting.callback.onClick, [srcEvent, treeId, node, clickFlag]);
             });
             obj.addEventListener(eventCName.EXPAND, function (event, treeId, node) {
-                tools.apply(setting.callback.onExpand, [event, treeId, node]);
+                this.tools.apply(setting.callback.onExpand, [event, treeId, node]);
             });
             obj.addEventListener(eventCName.COLLAPSE, function (event, treeId, node) {
-                tools.apply(setting.callback.onCollapse, [event, treeId, node]);
+                this.tools.apply(setting.callback.onCollapse, [event, treeId, node]);
             });
             obj.addEventListener(eventCName.REMOVE, function (event, treeId, treeNode) {
-                tools.apply(setting.callback.onRemove, [event, treeId, treeNode]);
+                this.tools.apply(setting.callback.onRemove, [event, treeId, treeNode]);
             });
             obj.addEventListener(eventCName.SELECTED, function (event, treeId, node) {
-                tools.apply(setting.callback.onSelected, [treeId, node]);
+                this.tools.apply(setting.callback.onSelected, [treeId, node]);
             });
             obj.addEventListener(eventCName.UNSELECTED, function (event, treeId, node) {
-                tools.apply(setting.callback.onUnSelected, [treeId, node]);
+                this.tools.apply(setting.callback.onUnSelected, [treeId, node]);
             });
-		},
-		// 解除默认绑定事件
-		_unbindEvent: function (setting) {
+        },
+        // 解除默认绑定事件
+        this._unbindEvent = function (setting) {
             var obj = setting.treeObj,
                 eventCName = consts.event;
             obj.removeEventListener(eventCName.NODECREATED)
-				.removeEventListener(eventCName.CLICK)
-				.removeEventListener(eventCName.EXPAND)
-				.removeEventListener(eventCName.COLLAPSE)
-				.removeEventListener(eventCName.REMOVE)
-				.removeEventListener(eventCName.SELECTED)
-				.removeEventListener(eventCName.UNSELECTED);
-		},
-		_initNode: function(n,setting, parentId, level, lastNode, isFirstNode, isLastNode){
-			// n，传入的node节点信息
-			if(!n){
-				return;
-			}
-			var rootNode = this.data.getRoot(setting, n),
-				children = this.data.getChildrenNode(setting, n),
-				isParent = this.data.nodeIsParent(setting, n);
-			// 对传入的nose节点存储信息
-			n.level = level;
-			// treeId = _level_index
-			n.treeId = setting.treeId + "_" + n.level + "_" + index;
-			n.parentTreeId = parentNode ? parentNode.treeId : null;
-			n.isFirstNode = isFirstNode;
-			n.isLastNode = isLastNode;
-			
-			// n具有的方法
-			n.getParentNode = function () {
-				return this.data.getNodeCache(setting, n.parentId);
-			};
-			n.getPreNode = function () {
-				return this.data.getPreNode(setting, n);
-			};
-			n.getNextNode = function () {
-				return this.data.getNextNode(setting, n);
-			};
-			n.getIndex = function () {
-				return this.data.getNodeIndex(setting, n);
+                .removeEventListener(eventCName.CLICK)
+                .removeEventListener(eventCName.EXPAND)
+                .removeEventListener(eventCName.COLLAPSE)
+                .removeEventListener(eventCName.REMOVE)
+                .removeEventListener(eventCName.SELECTED)
+                .removeEventListener(eventCName.UNSELECTED);
+        },
+        this._initNode = function(n,setting, parentId, level, lastNode, isFirstNode, isLastNode){
+            // n，传入的node节点信息
+            if(!n){
+                return;
+            }
+            var rootNode = this.data.getRoot(setting, n),
+                children = this.data.getChildrenNode(setting, n),
+                isParent = this.data.nodeIsParent(setting, n);
+            // 对传入的nose节点存储信息
+            n.level = level;
+            // treeId = _level_index
+            n.treeId = setting.treeId + "_" + n.level + "_" + index;
+            n.parentTreeId = parentNode ? parentNode.treeId : null;
+            n.isFirstNode = isFirstNode;
+            n.isLastNode = isLastNode;
+
+            // n具有的方法
+            n.getParentNode = function () {
+                return this.data.getNodeCache(setting, n.parentId);
             };
-			n.getPath = function () {
-				return this.data.getNodePath(setting, n);
+            n.getPreNode = function () {
+                return this.data.getPreNode(setting, n);
             };
-		}
+            n.getNextNode = function () {
+                return this.data.getNextNode(setting, n);
+            };
+            n.getIndex = function () {
+                return this.data.getNodeIndex(setting, n);
+            };
+            n.getPath = function () {
+                return this.data.getNodePath(setting, n);
+            };
+        }
+	    /****************** 定义赋值 ******************/
+	    this.consts = this._const,
+	    this._z = {
+	        tools: this.tools,
+            view: this.view,
+            event: this.event,
+            data: this.data,
+        }
 	}
+
+	qTree.prototype = {
+        getqTreeObj : function(treeId){
+            var obj = data.getqTreeObj(treeId);
+            return obj ? obj : null;
+        },
+        destroy : function(treeId){
+            if (!!treeId && treeId.length > 0){
+                this.view.destroy(this.data.getSetting(treeId));
+            } else {
+                for (var s in this.settings) {
+                    this.view.destroy(this.settings[s]);
+                }
+            }
+        },
+        init : function(obj, qSetting, qNodes) {
+            var setting = this.tools.clone(this._setting);
+            // js中使用深拷贝
+            this.deepCopy(setting, qSetting);
+        },
+        // 深拷贝，自带的object.assign()只是浅拷贝
+        deepCopy: function(p, c) {
+            var c = c || {};
+            for (var i in p) {
+                if (typeof p[i] === 'object') {
+                    c[i] = (p[i].constructor === Array) ? [] : {};
+                    this.deepCopy(p[i], c[i]);
+                } else {
+                    c[i] = p[i];
+                }
+        }
+        return c;
+    }
+    };
 
 	// 最后将插件对象暴露给全局对象
     _global = (function(){ return this || (0, eval)('this'); }());
