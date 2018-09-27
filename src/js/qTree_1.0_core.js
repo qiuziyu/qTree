@@ -61,7 +61,9 @@
 				selectedMulti: true,
                 expandSpeed: "fast",
                 nameIsHTML: false,
-                addDiyDom: null
+                addDiyDom: null,
+                autoCancelSelected: true,
+                txtSelectedEnable: false
 			},
 			data: {
 				key: {
@@ -132,11 +134,11 @@
             qTreeTools: []
 		},
 			// methods of data
-		this.data = {
+		data = {
 			/************************ 添加 ********************/
 			// cache of node
 			addNodeCache: function (setting, node) {
-                this.data.getCache(setting).nodes[this.data.getNodeCacheId(node.treeId)] = node;
+                this.getCache(setting).nodes[this.getNodeCacheId(node.treeId)] = node;
             },
 			getNodeCacheId: function (treeId) {
 				// 获取treeId在第二个"_"往后的数字
@@ -170,10 +172,10 @@
 				this._init.roots.push(initRoot);
             },
 			addNodesData: function (setting, parentNode, index, nodes) {
-				var children = this.data.nodeChildren(setting, parentNode), params;
+				var children = this.nodeChildren(setting, parentNode), params;
 				// 没有子节点
 				if (!children){
-					children = this.data.nodeChildren(setting, parentNode, []);
+					children = this.nodeChildren(setting, parentNode, []);
 					index = -1;
 				} else if(index >= children.length){
 					index = -1;
@@ -184,20 +186,20 @@
 					view.setNodeLineIcons(setting, children[0]);
 				} else if (children.length > 0 && index < 0){
 					children[children.length - 1].isLastNode = false;
-					view.setNodeLineIcons(setting, children[children.length - 1]);
+                    view.setNodeLineIcons(setting, children[children.length - 1]);
 				}
-				this.data.nodeIsParent(setting, parentNode, true);
+				this.nodeIsParent(setting, parentNode, true);
 
 				if (index < 0) {
-					this.data.nodeChildren(setting, parentNode, children.concat(nodes));
+					this.nodeChildren(setting, parentNode, children.concat(nodes));
 				}else {
 					params = [index, 0].concat(nodes);
 					children.splice.apply(children, params);
 				}
             },
 			addSelectedNode: function (setting, node) {
-				var root = this.data.getRoot(setting);
-				if (!this.data.isSelectedNode(setting, node)){
+				var root = this.getRoot(setting);
+				if (!this.isSelectedNode(setting, node)){
 					root.curSelectedList.push(node);
 				}
             },
@@ -223,31 +225,31 @@
                 }
             },
 			getCache: function (setting) {
-				return caches[setting.treeId];
+				return this.caches[setting.treeId];
             },
 			getRoot: function(setting){
-				return setting ? roots[setting.treeId] : null;
+				return setting ? this.roots[setting.treeId] : null;
 			},
 			getRoots: function(){
-				return roots;
+				return this.roots;
 			},
 			getSetting: function(treeId){
-				return settings[treeId];
+				return this.settings[treeId];
 			},
 			getSettings: function(){
-				return settings
+				return this.settings;
 			},
             // 获取根节点下所有节点
             getNodes: function (setting) {
-                return this.data.nodeChildren(setting, this.data.getRoot(setting));
+                return this.nodeChildren(setting, this.getRoot(setting));
             },
             // get node index bellow parentNode
 			getNodeIndex: function (setting, node) {
 				if(!node) return null;
 				//获取父节点
-				var parentNode = node.parentTreeId ? node.getParentNode() : this.data.getRoot(setting),
+				var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
 					//获取其父节点的所有子节点
-					children = this.data.nodeChildren(setting, parentNode);
+					children = this.nodeChildren(setting, parentNode);
 				for (var i = 0; i <= children.length - 1; i++){
 					if (children[i] === node){
 						//返回节点的下标，从0开始
@@ -258,31 +260,31 @@
             },
             getNextNode: function (setting, node) {
 				if (!node) return null;
-				var parentNode = node.parentTreeId ? node.getParentNode() : this.data.getRoot(setting),
-					children = this.data.nodeChildren(setting, parentNode);
+				var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
+					children = this.nodeChildren(setting, parentNode);
                 for (var i = 0; i <= children.length - 1; i++){
                     if (children[i] === node){
                         //返回节点下一个节点
-                        return (i == children.length - 1 ? null : children[i + 1]);
+                        return (i === children.length - 1 ? null : children[i + 1]);
                     }
                 }
                 return null;
             },
             getPreNode: function(setting, node){
 				if(!node)return null;
-                var parentNode = node.parentTreeId ? node.getParentNode() : this.data.getRoot(setting),
-                    children = this.data.nodeChildren(setting, parentNode);
+                var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
+                    children = this.nodeChildren(setting, parentNode);
                 for (var i = 0; i <= children.length - 1; i++){
                     if (children[i] === node){
                         //返回节点下一个节点
-                        return (i == 0 ? null : children[i - 1]);
+                        return (i === 0 ? null : children[i - 1]);
                     }
                 }
                 return null;
 			},
             getNodeCache: function (setting, treeId) {
 				if (!treeId) return null;
-				var n = caches[setting.treeId].nodes[this.data.getNodeCacheId(treeId)];
+				var n = caches[setting.treeId].nodes[this.getNodeCacheId(treeId)];
 				return n ? n : null;
             },
             // 获取节点的路径，如父节点-父节点1-节点
@@ -307,7 +309,7 @@
                 var key = setting.data.key.isParent;
                 if (typeof  newIsParent !== "undefined"){
                     if (typeof  newIsParent !== "string"){
-                        newIsParent = this.tools.eqs(newIsParent, "true");
+                        newIsParent = tools.eqs(newIsParent, "true");
                     }
                     newIsParent = !!newIsParent;
                     node[key] = newIsParent;
@@ -346,11 +348,11 @@
                 if (!nodes || !key) return null;
                 for (var i = 0; i < nodes.length; i++){
                     var node = nodes[i];
-                    if (node[key] == value){
+                    if (node[key] === value){
                         return nodes[i];
                     }
-                    var children = this.data.nodeChildren(setting, node);
-                    var tmp = this.data.getNodeByParam(setting, children, key, value);
+                    var children = this.nodeChildren(setting, node);
+                    var tmp = this.getNodeByParam(setting, children, key, value);
                     if (tmp) return tmp;
                 }
                 return null;
@@ -361,11 +363,11 @@
                 var result = [];
                 for (var i = 0; i < nodes.length; i++){
                     var node = nodes[i];
-                    if (node[key] == value){
+                    if (node[key] === value){
                         result.push(node);
                     }
-                    var children = this.data.nodeChildren(setting, node);
-                    result = result.concat(this.data.getNodesByParam(setting, children, key, value));
+                    var children = this.nodeChildren(setting, node);
+                    result = result.concat(this.getNodesByParam(setting, children, key, value));
                 }
                 return result;
             },
@@ -376,11 +378,11 @@
                 value = value.toLowerCase();
                 for (var i = 0; i < nodes.length; i++){
                     var node = nodes[i];
-                    if (typeof node[key] == "string" && nodes[i][key].toLowerCase().indexOf(value) > -1){
+                    if (typeof node[key] === "string" && nodes[i][key].toLowerCase().indexOf(value) > -1){
                         result.push(node);
                     }
-                    var children = this.data.nodeChildren(setting, node);
-                    result = result.concat(this.data.getNodesByParamFuzzy(setting, children, key, value));
+                    var children = this.nodeChildren(setting, node);
+                    result = result.concat(this.getNodesByParamFuzzy(setting, children, key, value));
                 }
                 return result;
             },
@@ -390,14 +392,14 @@
                 var result = isSingle ? null : [];
                 for (var i = 0, l = nodes.length; i < l; i++) {
                     var node = nodes[i];
-                    if (this.tools.apply(filter, [node, invokeParam], false)) {
+                    if (tools.apply(filter, [node, invokeParam], false)) {
                         if (isSingle) {
                             return node;
                         }
                         result.push(node);
                     }
-                    var children = this.data.nodeChildren(setting, node);
-                    var tmpResult = this.data.getNodesByFilter(setting, children, filter, isSingle, invokeParam);
+                    var children = this.nodeChildren(setting, node);
+                    var tmpResult = this.getNodesByFilter(setting, children, filter, isSingle, invokeParam);
                     if (isSingle && !!tmpResult) {
                         return tmpResult;
                     }
@@ -427,7 +429,7 @@
             },
             /************************ 判断 ********************/
             isSelectedNode: function (setting, node) {
-				var root = this.data.getRoot(setting);
+				var root = this.getRoot(setting);
 				for (var i = 0; i < root.curSelectedList.length; i++){
 					if (node === root.curSelectedList[i]) return true;
 				}
@@ -435,9 +437,9 @@
             /************************ 操作 ********************/
             // 删除
             removeSelectedNode: function (setting, node) {
-                var root = this.data.getRoot(setting);
+                var root = this.getRoot(setting);
                 for (var i = 0, j = root.curSelectedList.length; i < j; i++) {
-                    if (node === root.curSelectedList[i] || !this.data.getNodeCache(setting, root.curSelectedList[i].treeId)) {
+                    if (node === root.curSelectedList[i] || !this.getNodeCache(setting, root.curSelectedList[i].treeId)) {
                         root.curSelectedList.splice(i, 1);
                         setting.treeObj.trigger(consts.event.UNSELECTED, [setting.treeId, node]);
                         i--;
@@ -446,21 +448,21 @@
                 }
             },
             removeNodeCache: function(setting, node){
-                var children = this.data.nodeChildren(setting, node);
+                var children = this.nodeChildren(setting, node);
                 if (children){
                     for (var i = 0; i < children.length; i++){
-                        this.data.removeNodeCache(setting, children[i]);
+                        this.removeNodeCache(setting, children[i]);
                     }
                 }
-                this.data.getCache(setting).nodes[this.data.getNodeCacheId(node.treeId)] = null;
+                this.getCache(setting).nodes[this.getNodeCacheId(node.treeId)] = null;
             },
 
 			//设置
 			setCache: function (setting, cache) {
-				caches[setting.treeId] = cache;
+				this.caches[setting.treeId] = cache;
             },
 			setRoot: function (setting, root) {
-				roots[setting.treeId] = root;
+				this.roots[setting.treeId] = root;
             },
             setqTreeTools: function (setting, qTreeTools) {
 				for (var i = 0; i < this._init.qTreeTools.length; i++){
@@ -471,7 +473,7 @@
 			transformToArrayFormat: function (setting, nodes) {
                 if (!nodes) return [];
                 var r = [];
-                if (this.tools.isArray(nodes)) {
+                if (tools.isArray(nodes)) {
                     for (var i = 0, l = nodes.length; i < l; i++) {
                         var node = nodes[i];
                         _do(node);
@@ -483,9 +485,9 @@
 
                 function _do(_node) {
                     r.push(_node);
-                    var children = this.data.nodeChildren(setting, _node);
+                    var children = this.nodeChildren(setting, _node);
                     if (children) {
-                        r = r.concat(this.data.transformToArrayFormat(setting, children));
+                        r = r.concat(this.transformToArrayFormat(setting, children));
                     }
                 }
             },
@@ -494,9 +496,9 @@
                 var i, l,
                     key = setting.data.simpleData.idKey,
                     parentKey = setting.data.simpleData.pIdKey;
-                if (!key || key == "" || !sNodes) return [];
+                if (!key || key === "" || !sNodes) return [];
 
-                if (this.tools.isArray(sNodes)) {
+                if (tools.isArray(sNodes)) {
                     var r = [];
                     var tmpMap = {};
                     for (i = 0, l = sNodes.length; i < l; i++) {
@@ -504,10 +506,10 @@
                     }
                     for (i = 0, l = sNodes.length; i < l; i++) {
                         var p = tmpMap[sNodes[i][parentKey]];
-                        if (p && sNodes[i][key] != sNodes[i][parentKey]) {
-                            var children = this.data.nodeChildren(setting, p);
+                        if (p && sNodes[i][key] !== sNodes[i][parentKey]) {
+                            var children = this.nodeChildren(setting, p);
                             if (!children) {
-                                children = this.data.nodeChildren(setting, p, []);
+                                children = this.nodeChildren(setting, p, []);
                             }
                             children.push(sNodes[i]);
                         } else {
@@ -521,7 +523,7 @@
             }
 		},
 			// 事件代理方法
-		this.event = {
+		treeEvents = {
 			bindEvent: function (setting) {
 				for (var i = 0; i < this._init.binds.length; i++){
 					this._init.binds[i].apply(this, arguments);
@@ -538,23 +540,59 @@
                 },
                     obj = setting.treeObj;
 				if (!setting.view.txtSelectedEnable) {
-				    obj.addEventListener('selectstart', this.handler.onSelectStart).css({
-                        "-moz-user-select": "-moz-none"
-                    });
+				    var cssPro = "-moz-user-select";
+				    obj.addEventListener('selectstart', this.handler.onSelectStart).style.cssPro = "-moz-none";
                 }
-                // TODO
+                obj.addEventListener('click', eventParam, this.proxy);
+                obj.addEventListener('dblclick', eventParam, this.proxy);
+                obj.addEventListener('mouseover', eventParam, this.proxy);
+                obj.addEventListener('mouseout', eventParam, this.proxy);
+                obj.addEventListener('mousedown', eventParam, this.proxy);
+                obj.addEventListener('mouseup', eventParam, this.proxy);
+                obj.addEventListener('contextmenu', eventParam, this.proxy);
             },
             unbindTree: function (setting) {
-              // TODO
+                var o = setting.treeObj;
+                o.removeEventListener('selectstart', handler.onSelectStart)
+                    .removeEventListener('click', this.proxy)
+                    .removeEventListener('dblclick', this.proxy)
+                    .removeEventListener('mouseover', this.proxy)
+                    .removeEventListener('mouseout', this.proxy)
+                    .removeEventListener('mousedown', this.proxy)
+                    .removeEventListener('mouseup', this.proxy)
+                    .removeEventListener('contextmenu', this.proxy);
             },
             doProxy: function (e) {
-                // TODO
+                var results = [];
+                for (var i = 0, j = this._init.proxys.length; i < j; i++) {
+                    var proxyResult = this._init.proxys[i].apply(this, arguments);
+                    results.push(proxyResult);
+                    if (proxyResult.stop) {
+                        break;
+                    }
+                }
+                return results;
             },
             proxy: function (e) {
-                //TODO
+                var setting = data.getSetting(e.data.treeId);
+                if (!tools.uCanDo(setting, e)) return true;
+                var results = this.doProxy(e),
+                    r = true, x = false;
+                for (var i = 0, l = results.length; i < l; i++) {
+                    var proxyResult = results[i];
+                    if (proxyResult.nodeEventCallback) {
+                        x = true;
+                        r = proxyResult.nodeEventCallback.apply(proxyResult, [e, proxyResult.node]) && r;
+                    }
+                    if (proxyResult.treeEventCallback) {
+                        x = true;
+                        r = proxyResult.treeEventCallback.apply(proxyResult, [e, proxyResult.node]) && r;
+                    }
+                }
+                return r;
             }
 		},
-		this.handler = {
+		handler = {
             onSwitchNode: function (event, node) {
                 var setting = data.getSetting(event.data.treeId);
                 if (node.open) {
@@ -577,7 +615,7 @@
                 } else {
                     view.selectNode(setting, node, clickFlag === 2);
                 }
-                setting.treeObj.trigger(consts.event.CLICK, [event, setting.treeId, node, clickFlag]);
+                setting.treeObj.trigger(this.consts.event.CLICK, [event, setting.treeId, node, clickFlag]);
                 return true;
             },
             onZTreeMousedown: function (event, node) {
@@ -606,25 +644,30 @@
                 if (tools.apply(setting.callback.beforeRightClick, [setting.treeId, node], true)) {
                     tools.apply(setting.callback.onRightClick, [event, setting.treeId, node]);
                 }
-                return (typeof setting.callback.onRightClick) != "function";
+                return (typeof setting.callback.onRightClick) !== "function";
             },
             onSelectStart: function (e) {
                 var n = e.originalEvent.srcElement.nodeName.toLowerCase();
                 return (n === "input" || n === "textarea");
             }
         },
-        this.tools = {
+        tools = {
 		    apply: function (fun, param, defaultValue) {
-		        if ((typeof fun) == "function") {
+		        if ((typeof fun) === "function") {
                     return fun.apply(qt, param ? param : []);
                 }
                 return defaultValue;
             },
+            canAsync: function (setting, node) {
+                var children = data.nodeChildren(setting, node);
+                var isParent = data.nodeIsParent(setting, node);
+                return (setting.async.enable && node && isParent && !(node.zAsync || (children && children.length > 0)));
+            },
             clone: function (obj) {
                 if (obj === null) return null;
-                var o = this.tools.isArray(obj) ? [] : {};
+                var o = this.isArray(obj) ? [] : {};
                 for (var i in obj) {
-                    o[i] = (obj[i] instanceof Date) ? new Date(obj[i].getTime()) : (typeof obj[i] === "object" ? this.tools.clone(obj[i]) : obj[i]);
+                    o[i] = (obj[i] instanceof Date) ? new Date(obj[i].getTime()) : (typeof obj[i] === "object" ? this.clone(obj[i]) : obj[i]);
                 }
                 return o;
             },
@@ -661,48 +704,57 @@
                     curDom = curDom.parentNode;
                 }
                 return null;
+            },
+            getNodeMainDom: function (target) {
+                return (document.getElementById(target.id).parent("li").get(0) || $(target).parentsUntil("li").parent().get(0));
+            },
+            isChildOrSelf: function (dom, parentId) {
+                return (document.getElementById(dom.id).closest("#" + parentId).length > 0);
+            },
+            uCanDo: function (setting, e) {
+                return true;
             }
         },
-        this.view = {
+        view = {
 		    addNodes: function (setting, parentNode, index, newNodes, isSilent) {
                 // 获取父节点存在的状态
-                var isParent = this.data.nodeIsParent(setting, parentNode);
+                var isParent = data.nodeIsParent(setting, parentNode);
                 // 若没有父节点，状态为false，是叶子节点
                 if (parentNode && !isParent && setting.data.keep.leaf) {
                     return;
                 }
-                if (!this.tools.isArray(newNodes)) {
+                if (!tools.isArray(newNodes)) {
                     newNodes = [newNodes];
                 }
                 if (setting.data.simpleData.enable) {
-                    newNodes = this.data.transformToqTreeFormat(setting, newNodes);
+                    newNodes = data.transformToqTreeFormat(setting, newNodes);
                 }
                 if (parentNode) {
                     var target_switchObj = $$(parentNode, this.consts.id.SWITCH, setting),
                         target_iconObj = $$(parentNode, this.consts.id.ICON, setting),
                         target_ulObj = $$(parentNode, this.consts.id.UL);
                     if (!parentNode.open) {
-                        this.view.replaceSwitchClass(parentNode, target_switchObj, this.consts.folder.CLOSE);
-                        this.view.replaceIconClass(parentNode, target_iconObj, this.consts.folder.CLOSE);
+                        this.replaceSwitchClass(parentNode, target_switchObj, this.consts.folder.CLOSE);
+                        this.replaceIconClass(parentNode, target_iconObj, this.consts.folder.CLOSE);
                         parentNode.open = false;
                         target_ulObj.style.display = "none";
                     }
-                    this.data.addNodesData(setting, parentNode, index, newNodes);
-                    this.view.createNodes(setting, parentNode.level + 1, newNodes, parentNode, index);
+                    data.addNodesData(setting, parentNode, index, newNodes);
+                    this.createNodes(setting, parentNode.level + 1, newNodes, parentNode, index);
                     if (! isSilent) {
-                        this.view.expandCollapseParentNode(setting, parentNode, true);
+                        this.expandCollapseParentNode(setting, parentNode, true);
                     }
                 }else {
-                    this.data.addNodesData(setting, this.data.getRoot(setting), index, newNodes);
-                    this.view.createNodes(setting, 0, newNodes, null, index);
+                    data.addNodesData(setting, data.getRoot(setting), index, newNodes);
+                    this.createNodes(setting, 0, newNodes, null, index);
                 }
             },
             appendNodes: function (setting, level, nodes, parentNode, index, initFlag, openFlag) {
                 if (!nodes) return [];
                 var html = [];
 
-                var tmpPNode = (parentNode) ? parentNode : this.data.getRoot(setting),
-                    tmpPChild = this.data.nodeChildren(setting, tmpPNode),
+                var tmpPNode = (parentNode) ? parentNode : data.getRoot(setting),
+                    tmpPChild = data.nodeChildren(setting, tmpPNode),
                     isFirstNode, isLastNode;
 
                 if (!tmpPChild || index >= tmpPChild.length - nodes.length) {
@@ -712,15 +764,15 @@
                 for (var i = 0, l = nodes.length; i < l; i++) {
                     var node = nodes[i];
                     if (initFlag) {
-                        isFirstNode = ((index === 0 || tmpPChild.length == nodes.length) && (i == 0));
-                        isLastNode = (index < 0 && i == (nodes.length - 1));
-                        this.data.initNode(setting, level, node, parentNode, isFirstNode, isLastNode, openFlag);
-                        this.data.addNodeCache(setting, node);
+                        isFirstNode = ((index === 0 || tmpPChild.length === nodes.length) && (i === 0));
+                        isLastNode = (index < 0 && i === (nodes.length - 1));
+                        data.initNode(setting, level, node, parentNode, isFirstNode, isLastNode, openFlag);
+                        data.addNodeCache(setting, node);
                     }
-                    var isParent = this.data.nodeIsParent(setting, node);
+                    var isParent = data.nodeIsParent(setting, node);
 
                     var childHtml = [];
-                    var children = this.data.nodeChildren(setting, node);
+                    var children = data.nodeChildren(setting, node);
                     if (children && children.length > 0) {
                         //make child html first, because checkType
                         childHtml = this.view.appendNodes(setting, level + 1, children, node, -1, initFlag, openFlag && node.open);
@@ -728,18 +780,18 @@
                     if (openFlag) {
                         this.view.makeDOMNodeMainBefore(html, setting, node);
                         this.view.makeDOMNodeLine(html, setting, node);
-                        this.data.getBeforeA(setting, node, html);
+                        data.getBeforeA(setting, node, html);
                         this.view.makeDOMNodeNameBefore(html, setting, node);
-                        this.data.getInnerBeforeA(setting, node, html);
+                        data.getInnerBeforeA(setting, node, html);
                         this.view.makeDOMNodeIcon(html, setting, node);
-                        this.data.getInnerAfterA(setting, node, html);
+                        data.getInnerAfterA(setting, node, html);
                         this.view.makeDOMNodeNameAfter(html, setting, node);
-                        this.data.getAfterA(setting, node, html);
+                        data.getAfterA(setting, node, html);
                         if (isParent && node.open) {
                             this.view.makeUlHtml(setting, node, html, childHtml.join(''));
                         }
                         this.view.makeDOMNodeMainAfter(html, setting, node);
-                        this.data.addCreatedNode(setting, node);
+                        data.addCreatedNode(setting, node);
                     }
                 }
                 return html;
@@ -755,21 +807,21 @@
                 if (ulObj.get(0)) {
                     ulObj.remove();
                 }
-                var children = this.data.nodeChildren(setting, node),
+                var children = data.nodeChildren(setting, node),
                     childHtml = this.view.appendNodes(setting, node.level + 1, children, node, -1, false, true);
                 this.view.makeUlHtml(setting, node, html, childHtml.join(''));
                 nObj.append(html.join(''));
             },
             asyncNode: function (setting, node, isSilent, callback) {
                 var i, l;
-                var isParent = this.data.nodeIsParent(setting, node);
+                var isParent = data.nodeIsParent(setting, node);
                 if (node && !isParent) {
-                    this.tools.apply(callback);
+                    tools.apply(callback);
                     return false;
                 } else if (node && node.isAjaxing) {
                     return false;
-                } else if (this.tools.apply(setting.callback.beforeAsync, [setting.treeId, node], true) === false) {
-                    this.tools.apply(callback);
+                } else if (tools.apply(setting.callback.beforeAsync, [setting.treeId, node], true) === false) {
+                    tools.apply(callback);
                     return false;
                 }
                 if (node) {
@@ -779,7 +831,7 @@
                 }
 
                 var tmpParam = {};
-                var autoParam = this.tools.apply(setting.async.autoParam, [setting.treeId, node], setting.async.autoParam);
+                var autoParam = tools.apply(setting.async.autoParam, [setting.treeId, node], setting.async.autoParam);
                 for (i = 0, l = autoParam.length; node && i < l; i++) {
                     var pKey = autoParam[i].split("="), spKey = pKey;
                     if (pKey.length > 1) {
@@ -788,8 +840,8 @@
                     }
                     tmpParam[spKey] = node[pKey];
                 }
-                var otherParam = this.tools.apply(setting.async.otherParam, [setting.treeId, node], setting.async.otherParam);
-                if (this.tools.isArray(otherParam)) {
+                var otherParam = tools.apply(setting.async.otherParam, [setting.treeId, node], setting.async.otherParam);
+                if (tools.isArray(otherParam)) {
                     for (i = 0, l = otherParam.length; i < l; i += 2) {
                         tmpParam[otherParam[i]] = otherParam[i + 1];
                     }
@@ -799,16 +851,15 @@
                     }
                 }
 
-                var _tmpV = this.data.getRoot(setting)._ver;
+                var _tmpV = data.getRoot(setting)._ver;
                 var xhr = new XMLHttpRequest();
                 var type = setting.async.type;
-                var url = this.tools.apply(setting.async.url, [setting.treeId, node], setting.async.url);
-                var data = setting.async.contentType.indexOf('application/json') > -1 ? JSON.stringify(tmpParam) : tmpParam;
+                var url = tools.apply(setting.async.url, [setting.treeId, node], setting.async.url);
                 xhr.open(type, url, true);
                 xhr.setRequestHeader("Content-Type", setting.async.contentType);
                 xhr.onreadystatechange = function(msg, XMLHttpRequest, textStatus, errorThrown){
                     if (xhr.readyState === 4 && xhr.status===200){
-                        if (_tmpV !== this.data.getRoot(setting)._ver) {
+                        if (_tmpV !== data.getRoot(setting)._ver) {
                             return;
                         }
                         var newNodes = [];
@@ -828,36 +879,36 @@
                             node.isAjaxing = null;
                             node.zAsync = true;
                         }
-                        this.view.setNodeLineIcos(setting, node);
+                        this.setNodeLineIcons(setting, node);
                         if (newNodes && newNodes !== "") {
-                            newNodes = this.tools.apply(setting.async.dataFilter, [setting.treeId, node, newNodes], newNodes);
-                            this.view.addNodes(setting, node, -1, !!newNodes ? this.tools.clone(newNodes) : [], !!isSilent);
+                            newNodes = tools.apply(setting.async.dataFilter, [setting.treeId, node, newNodes], newNodes);
+                            this.view.addNodes(setting, node, -1, !!newNodes ? tools.clone(newNodes) : [], !!isSilent);
                         } else {
                             this.view.addNodes(setting, node, -1, [], !!isSilent);
                         }
                         setting.treeObj.trigger(this.consts.event.ASYNC_SUCCESS, [setting.treeId, node, msg]);
-                        this.tools.apply(callback);
+                        tools.apply(callback);
                     }else {
-                        if (_tmpV !== this.data.getRoot(setting)._ver) {
+                        if (_tmpV !== data.getRoot(setting)._ver) {
                             return;
                         }
                         if (node) node.isAjaxing = null;
-                        this.view.setNodeLineIcos(setting, node);
+                        this.setNodeLineIcons(setting, node);
                         setting.treeObj.trigger(this.consts.event.ASYNC_ERROR, [setting.treeId, node, XMLHttpRequest, textStatus, errorThrown]);
                     }
                 };
-                xhr.send(data);
+                xhr.send(setting.async.contentType.indexOf('application/json') > -1 ? JSON.stringify(tmpParam) : tmpParam);
                 /*$.ajax({
                     contentType: setting.async.contentType,
                     cache: false,
                     type: setting.async.type,
-                    url: this.tools.apply(setting.async.url, [setting.treeId, node], setting.async.url),
+                    url: tools.apply(setting.async.url, [setting.treeId, node], setting.async.url),
                     data: setting.async.contentType.indexOf('application/json') > -1 ? JSON.stringify(tmpParam) : tmpParam,
                     dataType: setting.async.dataType,
                     headers: setting.async.headers,
                     xhrFields: setting.async.xhrFields,
                     success: function (msg) {
-                        if (_tmpV !== this.data.getRoot(setting)._ver) {
+                        if (_tmpV !== data.getRoot(setting)._ver) {
                             return;
                         }
                         var newNodes = [];
@@ -879,16 +930,16 @@
                         }
                         this.view.setNodeLineIcos(setting, node);
                         if (newNodes && newNodes !== "") {
-                            newNodes = this.tools.apply(setting.async.dataFilter, [setting.treeId, node, newNodes], newNodes);
-                            this.view.addNodes(setting, node, -1, !!newNodes ? this.tools.clone(newNodes) : [], !!isSilent);
+                            newNodes = tools.apply(setting.async.dataFilter, [setting.treeId, node, newNodes], newNodes);
+                            this.view.addNodes(setting, node, -1, !!newNodes ? tools.clone(newNodes) : [], !!isSilent);
                         } else {
                             this.view.addNodes(setting, node, -1, [], !!isSilent);
                         }
                         setting.treeObj.trigger(this.consts.event.ASYNC_SUCCESS, [setting.treeId, node, msg]);
-                        this.tools.apply(callback);
+                        tools.apply(callback);
                     },
                     error: function (XMLHttpRequest, textStatus, errorThrown) {
-                        if (_tmpV !== this.data.getRoot(setting)._ver) {
+                        if (_tmpV !== data.getRoot(setting)._ver) {
                             return;
                         }
                         if (node) node.isAjaxing = null;
@@ -899,7 +950,7 @@
                 return true;
             },
             cancelPreSelectedNode: function (setting, node, excludeNode) {
-                var list = this.data.getRoot(setting).curSelectedList,
+                var list = data.getRoot(setting).curSelectedList,
                     i, n;
                 for (i = list.length - 1; i >= 0; i--) {
                     n = list[i];
@@ -907,7 +958,7 @@
                         var id = this.$(n, this.consts.id.A, setting);
                         document.getElementById(id).classList.remove(this.consts.node.SELECTEDNODE);
                         if (node) {
-                            this.data.removeSelectedNode(setting, node);
+                            data.removeSelectedNode(setting, node);
                             break;
                         } else {
                             list.splice(i, 1);
@@ -919,10 +970,10 @@
             },
             createNodeCallback: function(setting) {
                 if (!!setting.callback.onNodeCreated || !!setting.view.addDiyDom) {
-                    var root = this.data.getRoot(setting);
+                    var root = data.getRoot(setting);
                     while (root.createdNodes.length > 0) {
                         var node = root.createdNodes.shift();
-                        this.tools.apply(setting.view.addDiyDom, [setting.treeId, node]);
+                        tools.apply(setting.view.addDiyDom, [setting.treeId, node]);
                         if (!!setting.callback.onNodeCreated) {
                             setting.treeObj.trigger(this.consts.event.NODECREATED, [setting.treeId, node]);
                         }
@@ -930,11 +981,11 @@
                 }
             },
             createNodes: function(setting, level, nodes, parentNode, index) {
-                if (!nodes || nodes.length == 0) return;
-                var root = this.data.getRoot(setting),
-                    openFlag = !parentNode || parentNode.open || !!$$(this.data.nodeChildren(setting, parentNode)[0], setting).get(0);
+                if (!nodes || nodes.length === 0) return;
+                var root = data.getRoot(setting),
+                    openFlag = !parentNode || parentNode.open || !!$$(data.nodeChildren(setting, parentNode)[0], setting).get(0);
                 root.createdNodes = [];
-                var zTreeHtml = this.view.appendNodes(setting, level, nodes, parentNode, index, true, openFlag),
+                var zTreeHtml = this.appendNodes(setting, level, nodes, parentNode, index, true, openFlag),
                     parentObj, nextObj;
 
                 if (!parentNode) {
@@ -958,26 +1009,26 @@
                     }
                 }
 
-                this.view.createNodeCallback(setting);
+                this.createNodeCallback(setting);
             },
             destroy: function (setting) {
                 if (!setting) return;
-                this.data.initCache(setting);
-                this.data.initRoot(setting);
-                event.unbindTree(setting);
-                event.unbindEvent(setting);
+                data.initCache(setting);
+                data.initRoot(setting);
+                treeEvents.unbindTree(setting);
+                treeEvents.unbindEvent(setting);
                 setting.treeObj.empty();
                 delete this.settings[setting.treeId];
             },
             expandCollapseNode: function (setting, node, expandFlag, animateFlag, callback) {
-                var root = this.data.getRoot(setting);
+                var root = data.getRoot(setting);
                 var tmpCb, _callback;
                 if (!node) {
-                    this.tools.apply(callback, []);
+                    tools.apply(callback, []);
                     return;
                 }
-                var children = this.data.nodeChildren(setting, node);
-                var isParent = this.data.nodeIsParent(setting, node);
+                var children = data.nodeChildren(setting, node);
+                var isParent = data.nodeIsParent(setting, node);
                 if (root.expandTriggerFlag) {
                     _callback = callback;
                     tmpCb = function () {
@@ -991,12 +1042,12 @@
                     callback = tmpCb;
                     root.expandTriggerFlag = false;
                 }
-                if (!node.open && isParent && ((!$$(node, consts.id.UL, setting).get(0)) || (children && children.length > 0 && !$$(children[0], setting).get(0)))) {
-                    this.view.appendParentULDom(setting, node);
-                    this.view.createNodeCallback(setting);
+                if (!node.open && isParent && ((!$$(node, this.consts.id.UL, setting).get(0)) || (children && children.length > 0 && !$$(children[0], setting).get(0)))) {
+                    this.appendParentULDom(setting, node);
+                    this.createNodeCallback(setting);
                 }
-                if (node.open == expandFlag) {
-                    this.tools.apply(callback, []);
+                if (node.open === expandFlag) {
+                    tools.apply(callback, []);
                     return;
                 }
 
@@ -1007,27 +1058,27 @@
                 if (isParent) {
                     node.open = !node.open;
                     if (node.iconOpen && node.iconClose) {
-                        icoObj.setAttribute("style", this.view.makeNodeIcoStyle(setting, node));
+                        icoObj.setAttribute("style", this.makeNodeIcoStyle(setting, node));
                     }
 
                     if (node.open) {
-                        this.view.replaceSwitchClass(node, switchObj, this.consts.folder.OPEN);
-                        this.view.replaceIconClass(node, icoObj, this.consts.folder.OPEN);
+                        this.replaceSwitchClass(node, switchObj, this.consts.folder.OPEN);
+                        this.replaceIconClass(node, icoObj, this.consts.folder.OPEN);
                         if (animateFlag === false || setting.view.expandSpeed === "") {
                             ulObj.show();
-                            this.tools.apply(callback, []);
+                            tools.apply(callback, []);
                         } else {
                             if (children && children.length > 0) {
                                 ulObj.slideDown(setting.view.expandSpeed, callback);
                             } else {
                                 ulObj.show();
-                                this.tools.apply(callback, []);
+                                tools.apply(callback, []);
                             }
                         }
                     } else {
-                        view.replaceSwitchClass(node, switchObj, consts.folder.CLOSE);
-                        view.replaceIcoClass(node, icoObj, consts.folder.CLOSE);
-                        if (animateFlag == false || setting.view.expandSpeed == "" || !(children && children.length > 0)) {
+                        this.replaceSwitchClass(node, switchObj, this.consts.folder.CLOSE);
+                        this.replaceIconClass(node, icoObj, this.consts.folder.CLOSE);
+                        if (animateFlag === false || setting.view.expandSpeed === "" || !(children && children.length > 0)) {
                             ulObj.hide();
                             tools.apply(callback, []);
                         } else {
@@ -1051,24 +1102,24 @@
                 }
             },
             expandCollapseSonNode: function (setting, node, expandFlag, animateFlag, callback) {
-                var root = this.data.getRoot(setting),
-                    treeNodes = (node) ? this.data.nodeChildren(setting, node) : this.data.nodeChildren(setting, root),
+                var root = data.getRoot(setting),
+                    treeNodes = (node) ? data.nodeChildren(setting, node) : data.nodeChildren(setting, root),
                     selfAnimateSign = (node) ? false : animateFlag,
-                    expandTriggerFlag = this.data.getRoot(setting).expandTriggerFlag;
-                this.data.getRoot(setting).expandTriggerFlag = false;
+                    expandTriggerFlag = data.getRoot(setting).expandTriggerFlag;
+                data.getRoot(setting).expandTriggerFlag = false;
                 if (treeNodes) {
                     for (var i = 0, l = treeNodes.length; i < l; i++) {
                         if (treeNodes[i]) this.view.expandCollapseSonNode(setting, treeNodes[i], expandFlag, selfAnimateSign);
                     }
                 }
-                this.data.getRoot(setting).expandTriggerFlag = expandTriggerFlag;
+                data.getRoot(setting).expandTriggerFlag = expandTriggerFlag;
                 this.view.expandCollapseNode(setting, node, expandFlag, animateFlag, callback);
             },
             isSelectedNode: function (setting, node) {
                 if (!node) {
                     return false;
                 }
-                var list = this.data.getRoot(setting).curSelectedList,
+                var list = data.getRoot(setting).curSelectedList,
                     i;
                 for (i = list.length - 1; i >= 0; i--) {
                     if (node === list[i]) {
@@ -1099,7 +1150,7 @@
                 html.push("</a>");
             },
             makeDOMNodeNameBefore: function (html, setting, node) {
-                var title = this.data.nodeTitle(setting, node),
+                var title = data.nodeTitle(setting, node),
                     url = this.view.makeNodeUrl(setting, node),
                     fontcss = this.view.makeNodeFontCss(setting, node),
                     fontStyle = [];
@@ -1109,19 +1160,19 @@
                 html.push("<a id='", node.treeId, this.consts.id.A, "' class='", this.consts.className.LEVEL, node.level, "' treeNode", this.consts.id.A, " onclick=\"", (node.click || ''),
                     "\" ", ((url != null && url.length > 0) ? "href='" + url + "'" : ""), " target='", this.view.makeNodeTarget(node), "' style='", fontStyle.join(''),
                     "'");
-                if (this.tools.apply(setting.view.showTitle, [setting.treeId, node], setting.view.showTitle) && title) {
+                if (tools.apply(setting.view.showTitle, [setting.treeId, node], setting.view.showTitle) && title) {
                     html.push("title='", title.replace(/'/g, "&#39;").replace(/</g, '&lt;').replace(/>/g, '&gt;'), "'");
                 }
                 html.push(">");
             },
             makeNodeFontCss: function (setting, node) {
-                var fontCss = this.tools.apply(setting.view.fontCss, [setting.treeId, node], setting.view.fontCss);
+                var fontCss = tools.apply(setting.view.fontCss, [setting.treeId, node], setting.view.fontCss);
                 return (fontCss && ((typeof fontCss) !== "function")) ? fontCss : {};
             },
             makeNodeIcoClass: function (setting, node) {
                 var icoCss = ["ico"];
                 if (!node.isAjaxing) {
-                    var isParent = this.data.nodeIsParent(setting, node);
+                    var isParent = data.nodeIsParent(setting, node);
                     icoCss[0] = (node.iconSkin ? node.iconSkin + "_" : "") + icoCss[0];
                     if (isParent) {
                         icoCss.push(node.open ? this.consts.folder.OPEN : this.consts.folder.CLOSE);
@@ -1158,7 +1209,7 @@
                 } else {
                     lineClass.push(this.consts.line.NOLINE);
                 }
-                if (this.data.nodeIsParent(setting, node)) {
+                if (data.nodeIsParent(setting, node)) {
                     lineClass.push(node.open ? this.consts.folder.OPEN : this.consts.folder.CLOSE);
                 } else {
                     lineClass.push(this.consts.folder.DOCU);
@@ -1185,17 +1236,17 @@
             },
             removeChildNodes: function (setting, node) {
                 if (!node) return;
-                var nodes = this.data.nodeChildren(setting, node);
+                var nodes = data.nodeChildren(setting, node);
                 if (!nodes) return;
 
                 for (var i = 0, l = nodes.length; i < l; i++) {
-                    this.data.removeNodeCache(setting, nodes[i]);
+                    data.removeNodeCache(setting, nodes[i]);
                 }
-                this.data.removeSelectedNode(setting);
+                data.removeSelectedNode(setting);
                 delete node[setting.data.key.children];
 
                 if (!setting.data.keep.parent) {
-                    this.data.nodeIsParent(setting, node, false);
+                    data.nodeIsParent(setting, node, false);
                     node.open = false;
                     var tmp_switchObj = $$(node, this.consts.id.SWITCH, setting),
                         tmp_icoObj = $$(node, this.consts.id.ICON, setting);
@@ -1286,19 +1337,19 @@
                 dom.scrollIntoViewIfNeeded();
             },
             setFirstNode: function (setting, parentNode) {
-                var children = this.data.nodeChildren(setting, parentNode);
+                var children = data.nodeChildren(setting, parentNode);
                 if (children.length > 0) {
                     children[0].isFirstNode = true;
                 }
             },
             setLastNode: function (setting, parentNode) {
-                var children = this.data.nodeChildren(setting, parentNode);
+                var children = data.nodeChildren(setting, parentNode);
                 if (children.length > 0) {
                     children[children.length - 1].isLastNode = true;
                 }
             },
             removeNode: function (setting, node) {
-                var root = this.data.getRoot(setting),
+                var root = data.getRoot(setting),
                     parentNode = (node.parentTreeId) ? node.getParentNode() : root;
 
                 node.isFirstNode = false;
@@ -1381,7 +1432,7 @@
                     aObj.classList.add(fontCss);
                 }
             },
-            setNodeLineIcos: function (setting, node) {
+            setNodeLineIcons: function (setting, node) {
                 if (!node) return;
                 var switchObj = $$(node, this.consts.id.SWITCH, setting),
                     ulObj = $$(node, this.consts.id.UL, setting),
@@ -1393,7 +1444,7 @@
                     ulObj.classList.add(ulLine);
                 }
                 switchObj.setAttribute("class", this.view.makeNodeLineClass(setting, node));
-                if (this.data.nodeIsParent(setting, node)) {
+                if (data.nodeIsParent(setting, node)) {
                     switchObj.removeAttribute("disabled");
                 } else {
                     switchObj.setAttribute("disabled", "disabled");
@@ -1403,15 +1454,15 @@
                 icoObj.setAttribute("class", this.view.makeNodeIcoClass(setting, node));
             },
             setNodeName: function (setting, node) {
-                var title = this.data.nodeTitle(setting, node),
+                var title = data.nodeTitle(setting, node),
                     nObj = $$(node, this.consts.id.SPAN, setting);
                 nObj.empty();
                 if (setting.view.nameIsHTML) {
-                    nObj.html(this.data.nodeName(setting, node));
+                    nObj.html(data.nodeName(setting, node));
                 } else {
-                    nObj.text(this.data.nodeName(setting, node));
+                    nObj.text(data.nodeName(setting, node));
                 }
-                if (this.tools.apply(setting.view.showTitle, [setting.treeId, node], setting.view.showTitle)) {
+                if (tools.apply(setting.view.showTitle, [setting.treeId, node], setting.view.showTitle)) {
                     var aObj = $$(node, this.consts.id.A, setting);
                     aObj.setAttribute("title", !title ? "" : title);
                 }
@@ -1430,7 +1481,7 @@
                 }
             },
             switchNode: function (setting, node) {
-                if (node.open || !this.tools.canAsync(setting, node)) {
+                if (node.open || !tools.canAsync(setting, node)) {
                     this.view.expandCollapseNode(setting, node, !node.open);
                 } else if (setting.async.enable) {
                     if (!this.view.asyncNode(setting, node)) {
@@ -1443,12 +1494,12 @@
             }
         },
         this._initRoot = function (setting){
-            var rootNode = this.data.getRoot(setting);
+            var rootNode = data.getRoot(setting);
             if(!rootNode) {
                 rootNode = {};
-                this.data.setRoot(setting, rootNode);
+                data.setRoot(setting, rootNode);
             }
-            this.data.nodeChildren(setting, rootNode, []);
+            data.nodeChildren(setting, rootNode, []);
             rootNode.expandTriggerFlag = false;
             rootNode.curSelectedList = [];
             rootNode.noSelection = true;
@@ -1456,10 +1507,10 @@
             rootNode.qId = 0;
         },
         this._initCache = function (setting) {
-            var cache = this.data.getCache(setting);
+            var cache = data.getCache(setting);
             if(!cache){
                 cache = {};
-                this.data.setCache(setting, cache);
+                data.setCache(setting, cache);
             }
             cache.nodes = {};
             cache.doms = {};
@@ -1469,25 +1520,25 @@
             var obj = setting.treeObj,
                 eventCName = consts.event;
             obj.addEventListener(eventCName.NODECREATED, function (event, treeId, node) {
-                this.tools.apply(setting.callback.onNodeCreated, [event, treeId, node]);
+                tools.apply(setting.callback.onNodeCreated, [event, treeId, node]);
             });
             obj.addEventListener(eventCName.CLICK, function (event, treeId, node, srcEvent, clickFlag) {
-                this.tools.apply(setting.callback.onClick, [srcEvent, treeId, node, clickFlag]);
+                tools.apply(setting.callback.onClick, [srcEvent, treeId, node, clickFlag]);
             });
             obj.addEventListener(eventCName.EXPAND, function (event, treeId, node) {
-                this.tools.apply(setting.callback.onExpand, [event, treeId, node]);
+                tools.apply(setting.callback.onExpand, [event, treeId, node]);
             });
             obj.addEventListener(eventCName.COLLAPSE, function (event, treeId, node) {
-                this.tools.apply(setting.callback.onCollapse, [event, treeId, node]);
+                tools.apply(setting.callback.onCollapse, [event, treeId, node]);
             });
             obj.addEventListener(eventCName.REMOVE, function (event, treeId, treeNode) {
-                this.tools.apply(setting.callback.onRemove, [event, treeId, treeNode]);
+                tools.apply(setting.callback.onRemove, [event, treeId, treeNode]);
             });
             obj.addEventListener(eventCName.SELECTED, function (event, treeId, node) {
-                this.tools.apply(setting.callback.onSelected, [treeId, node]);
+                tools.apply(setting.callback.onSelected, [treeId, node]);
             });
             obj.addEventListener(eventCName.UNSELECTED, function (event, treeId, node) {
-                this.tools.apply(setting.callback.onUnSelected, [treeId, node]);
+                tools.apply(setting.callback.onUnSelected, [treeId, node]);
             });
         },
         // 解除默认绑定事件
@@ -1507,9 +1558,9 @@
             if(!n){
                 return;
             }
-            var rootNode = this.data.getRoot(setting, n),
-                children = this.data.getChildrenNode(setting, n),
-                isParent = this.data.nodeIsParent(setting, n);
+            var rootNode = data.getRoot(setting, n),
+                children = data.getChildrenNode(setting, n),
+                isParent = data.nodeIsParent(setting, n);
             // 对传入的nose节点存储信息
             n.level = level;
             // treeId = _level_index
@@ -1520,39 +1571,40 @@
 
             // n具有的方法
             n.getParentNode = function () {
-                return this.data.getNodeCache(setting, n.parentId);
+                return data.getNodeCache(setting, n.parentId);
             };
             n.getPreNode = function () {
-                return this.data.getPreNode(setting, n);
+                return data.getPreNode(setting, n);
             };
             n.getNextNode = function () {
-                return this.data.getNextNode(setting, n);
+                return data.getNextNode(setting, n);
             };
             n.getIndex = function () {
-                return this.data.getNodeIndex(setting, n);
+                return data.getNodeIndex(setting, n);
             };
             n.getPath = function () {
-                return this.data.getNodePath(setting, n);
+                return data.getNodePath(setting, n);
             };
         }
 	    /****************** 定义赋值 ******************/
 	    this.consts = this._const,
 	    this._z = {
-	        tools: this.tools,
-            view: this.view,
-            event: this.event,
-            data: this.data,
+	        tools: tools,
+            view: view,
+            event: treeEvents,
+            data: data,
+            handler: handler
         }
 	}
 
 	qTree.prototype = {
         getqTreeObj : function(treeId){
-            var obj = data.getqTreeObj(treeId);
+            var obj = data.getqTreeTools(treeId);
             return obj ? obj : null;
         },
         destroy : function(treeId){
             if (!!treeId && treeId.length > 0){
-                this.view.destroy(this.data.getSetting(treeId));
+                this.view.destroy(data.getSetting(treeId));
             } else {
                 for (var s in this.settings) {
                     this.view.destroy(this.settings[s]);
@@ -1560,7 +1612,7 @@
             }
         },
         init : function(obj, qSetting, qNodes) {
-            var setting = this.tools.clone(this._setting);
+            var setting = tools.clone(this._setting);
             // js中使用深拷贝,将qSetting深拷贝到setting上(object,target)
             this.deepCopy(qSetting, setting);
 
@@ -1574,26 +1626,26 @@
                 setting.view.expandSpeed = "";
             }
             // 一系列初始化操作
-            this.data.initRoot(setting);
-            var root = this.data.getRoot(setting);
+            data.initRoot(setting);
+            var root = data.getRoot(setting);
             qNodes = qNodes ? tools.clone(tools.isArray(qNodes) ? qNodes : [qNodes]) : [];
             if (setting.data.simpleData.enable) {
-                this.data.nodeChildren(setting, root, this.data.transformToqTreeFormat(setting,qNodes));
+                data.nodeChildren(setting, root, data.transformToqTreeFormat(setting,qNodes));
             }else {
-                this.data.nodeChildren(setting, root, qNodes);
+                data.nodeChildren(setting, root, qNodes);
             }
-            this.data.initCache(setting);
-            this.event.unbindTree(setting);
-            this.event.bindTree(setting);
-            this.event.unbindEvent(setting);
-            this.event.bindEvent(setting);
+            data.initCache(setting);
+            treeEvents.unbindTree(setting);
+            treeEvents.bindTree(setting);
+            treeEvents.unbindEvent(setting);
+            treeEvents.bindEvent(setting);
 
             var qTreeTools = {
                 setting: setting,
                 addNodes: function (parentNode, index, newNodes, isSilent) {
                     if (!parentNode) parentNode = null; // 没有父节点，设为空
                     // 获取父节点存在的状态
-                    var isParent = this.data.nodeIsParent(setting, parentNode);
+                    var isParent = data.nodeIsParent(setting, parentNode);
                     // 若没有父节点，状态为false，是叶子节点
                     if (parentNode && !isParent && setting.data.keep.leaf) return null;
                     // 将index按照10进制数解析
@@ -1606,12 +1658,12 @@
                         index = i;
                     }
                     if (!newNodes) return null;
-                    var qNewNodes = this.tools.clone(this.tools.isArray(newNodes) ? newNodes : [newNodes]);
+                    var qNewNodes = tools.clone(tools.isArray(newNodes) ? newNodes : [newNodes]);
 
                     function addCallback() {
                         this.view.addNodes(setting, parentNode, index, qNewNodes, (isSilent === true));
                     }
-                    if (this.tools.canAsync(setting, parentNode)) {
+                    if (tools.canAsync(setting, parentNode)) {
                         this.view.asyncNode(setting, parentNode, isSilent, addCallback);
                     } else {
                         addCallback();
@@ -1630,15 +1682,15 @@
                     return expandFlag;
                 },
                 expandNode: function (node, expandFlag, sonSign, focus, callbackFlag) {
-                    if (!node || !this.data.nodeIsParent(setting, node)) return null;
+                    if (!node || !data.nodeIsParent(setting, node)) return null;
                     if (expandFlag !== true && expandFlag !== false) {
                         expandFlag = !node.open;
                     }
                     callbackFlag = !!callbackFlag;
 
-                    if (callbackFlag && expandFlag && (tools.apply(setting.callback.beforeExpand, [setting.treeId, node], true) == false)) {
+                    if (callbackFlag && expandFlag && (tools.apply(setting.callback.beforeExpand, [setting.treeId, node], true) === false)) {
                         return null;
-                    } else if (callbackFlag && !expandFlag && (tools.apply(setting.callback.beforeCollapse, [setting.treeId, node], true) == false)) {
+                    } else if (callbackFlag && !expandFlag && (tools.apply(setting.callback.beforeCollapse, [setting.treeId, node], true) === false)) {
                         return null;
                     }
                     if (expandFlag && node.parentTId) {
@@ -1666,46 +1718,46 @@
                     }
                 },
                 getNodes: function () {
-                    return this.data.getNodes(setting);
+                    return data.getNodes(setting);
                 },
                 getNodeByParam: function (key, value, parentNode) {
                     if (!key) return null;
-                    return this.data.getNodeByParam(setting, parentNode ? this.data.nodeChildren(setting, parentNode) : this.data.getNodes(setting), key, value);
+                    return data.getNodeByParam(setting, parentNode ? data.nodeChildren(setting, parentNode) : data.getNodes(setting), key, value);
                 },
                 getNodeByTId: function (tId) {
-                    return this.data.getNodeCache(setting, tId);
+                    return data.getNodeCache(setting, tId);
                 },
                 getNodesByParam: function (key, value, parentNode) {
                     if (!key) return null;
-                    return this.data.getNodesByParam(setting, parentNode ? this.data.nodeChildren(setting, parentNode) : this.data.getNodes(setting), key, value);
+                    return data.getNodesByParam(setting, parentNode ? data.nodeChildren(setting, parentNode) : data.getNodes(setting), key, value);
                 },
                 getNodesByParamFuzzy: function (key, value, parentNode) {
                     if (!key) return null;
-                    return this.data.getNodesByParamFuzzy(setting, parentNode ? this.data.nodeChildren(setting, parentNode) : this.data.getNodes(setting), key, value);
+                    return data.getNodesByParamFuzzy(setting, parentNode ? data.nodeChildren(setting, parentNode) : data.getNodes(setting), key, value);
                 },
                 getNodesByFilter: function (filter, isSingle, parentNode, invokeParam) {
                     isSingle = !!isSingle;
-                    if (!filter || (typeof filter != "function")) return (isSingle ? null : []);
-                    return this.data.getNodesByFilter(setting, parentNode ? this.data.nodeChildren(setting, parentNode) : this.data.getNodes(setting), filter, isSingle, invokeParam);
+                    if (!filter || (typeof filter !== "function")) return (isSingle ? null : []);
+                    return data.getNodesByFilter(setting, parentNode ? data.nodeChildren(setting, parentNode) : data.getNodes(setting), filter, isSingle, invokeParam);
                 },
                 getNodeIndex: function (node) {
                     if (!node) return null;
-                    var parentNode = (node.parentTreeId) ? node.getParentNode() : this.data.getRoot(setting);
-                    var children = this.data.nodeChildren(setting, parentNode);
+                    var parentNode = (node.parentTreeId) ? node.getParentNode() : data.getRoot(setting);
+                    var children = data.nodeChildren(setting, parentNode);
                     for (var i = 0, l = children.length; i < l; i++) {
                         if (children[i] == node) return i;
                     }
                     return -1;
                 },
                 getSelectedNodes: function () {
-                    var r = [], list = this.data.getRoot(setting).curSelectedList;
+                    var r = [], list = data.getRoot(setting).curSelectedList;
                     for (var i = 0, l = list.length; i < l; i++) {
                         r.push(list[i]);
                     }
                     return r;
                 },
                 isSelectedNode: function (node) {
-                    return this.data.isSelectedNode(setting, node);
+                    return data.isSelectedNode(setting, node);
                 },
                 reAsyncChildNodesPromise: function (parentNode, reloadType, isSilent) {
                     var promise = new Promise(function (resolve, reject) {
@@ -1723,15 +1775,15 @@
                     if (!this.setting.async.enable) return;
                     var isRoot = !parentNode;
                     if (isRoot) {
-                        parentNode = this.data.getRoot(setting);
+                        parentNode = data.getRoot(setting);
                     }
-                    if (reloadType == "refresh") {
-                        var children = this.data.nodeChildren(setting, parentNode);
+                    if (reloadType === "refresh") {
+                        var children = data.nodeChildren(setting, parentNode);
                         for (var i = 0, l = children ? children.length : 0; i < l; i++) {
-                            this.data.removeNodeCache(setting, children[i]);
+                            data.removeNodeCache(setting, children[i]);
                         }
-                        this.data.removeSelectedNode(setting);
-                        this.data.nodeChildren(setting, parentNode, []);
+                        data.removeSelectedNode(setting);
+                        data.nodeChildren(setting, parentNode, []);
                         if (isRoot) {
                             this.setting.treeObj.empty();
                         } else {
@@ -1743,23 +1795,23 @@
                 },
                 refresh: function () {
                     this.setting.treeObj.empty();
-                    var root = this.data.getRoot(setting),
-                        nodes = this.data.nodeChildren(setting, root);
-                    this.data.initRoot(setting);
-                    this.data.nodeChildren(setting, root, nodes);
-                    this.data.initCache(setting);
-                    this.view.createNodes(setting, 0, this.data.nodeChildren(setting, root), null, -1);
+                    var root = data.getRoot(setting),
+                        nodes = data.nodeChildren(setting, root);
+                    data.initRoot(setting);
+                    data.nodeChildren(setting, root, nodes);
+                    data.initCache(setting);
+                    this.view.createNodes(setting, 0, data.nodeChildren(setting, root), null, -1);
                 },
                 removeChildNodes: function (node) {
                     if (!node) return null;
-                    var nodes = this.data.nodeChildren(setting, node);
+                    var nodes = data.nodeChildren(setting, node);
                     this.view.removeChildNodes(setting, node);
                     return nodes ? nodes : null;
                 },
                 removeNode: function (node, callbackFlag) {
                     if (!node) return;
                     callbackFlag = !!callbackFlag;
-                    if (callbackFlag && this.tools.apply(setting.callback.beforeRemove, [setting.treeId, node], true) == false) return;
+                    if (callbackFlag && tools.apply(setting.callback.beforeRemove, [setting.treeId, node], true) === false) return;
                     this.view.removeNode(setting, node);
                     if (callbackFlag) {
                         this.setting.treeObj.trigger(this.consts.event.REMOVE, [setting.treeId, node]);
@@ -1767,7 +1819,7 @@
                 },
                 selectNode: function (node, addFlag, isSilent) {
                     if (!node) return;
-                    if (this.tools.uCanDo(setting)) {
+                    if (tools.uCanDo(setting)) {
                         addFlag = setting.view.selectedMulti && addFlag;
                         if (node.parentTreeId) {
                             this.view.expandCollapseParentNode(setting, node.getParentNode(), true, false, showNodeFocus);
@@ -1789,15 +1841,15 @@
                     }
                 },
                 transformTozTreeNodes: function (simpleNodes) {
-                    return this.data.transformTozTreeFormat(setting, simpleNodes);
+                    return data.transformTozTreeFormat(setting, simpleNodes);
                 },
                 transformToArray: function (nodes) {
-                    return this.data.transformToArrayFormat(setting, nodes);
+                    return data.transformToArrayFormat(setting, nodes);
                 },
                 updateNode: function (node, checkTypeFlag) {
                     if (!node) return;
                     var nObj = $$(node, setting);
-                    if (nObj.get(0) && this.tools.uCanDo(setting)) {
+                    if (nObj.get(0) && tools.uCanDo(setting)) {
                         this.view.setNodeName(setting, node);
                         this.view.setNodeTarget(setting, node);
                         this.view.setNodeUrl(setting, node);
@@ -1807,8 +1859,8 @@
                 }
             };
             root.treeTools = qTreeTools;
-            this.data.setqTreeTools(setting, qTreeTools);
-            var children = this.data.nodeChildren(setting, root);
+            data.setqTreeTools(setting, qTreeTools);
+            var children = data.nodeChildren(setting, root);
             if (children && children.length > 0) {
                 this.view.createNodes(setting, 0, children, null, -1);
             } else if (setting.async.enable && setting.async.url && setting.async.url !== '') {
