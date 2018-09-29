@@ -3,11 +3,11 @@
 	var _global;
 
 	//插件构造函数
-	function qTree(){
+	function QTree(){
 		this.settings = {},
 		this.roots = {},
 		this.caches = {},
-		this._const = {
+		this._consts = {
 			className: {
 				BUTTON: "btn",
 				LEVEL: "level",
@@ -133,83 +133,188 @@
 			innerAfterA: [],
             qTreeTools: []
 		},
-			// methods of data
-		data = {
-			/************************ 添加 ********************/
-			// cache of node
-			addNodeCache: function (setting, node) {
+	    /****************** 定义赋值 ******************/
+        this.consts = this._consts,
+	    this._z = {
+	        tools: this.tools,
+            view: this.view,
+            event: this.treeEvents,
+            data: this.data,
+            handler: this.handlers
+        }
+	}
+
+	QTree.prototype = {
+        _initRoot : function (setting){
+        var rootNode = data.getRoot(setting);
+        if(!rootNode) {
+            rootNode = {};
+            data.setRoot(setting, rootNode);
+        }
+        data.nodeChildren(setting, rootNode, []);
+        rootNode.expandTriggerFlag = false;
+        rootNode.curSelectedList = [];
+        rootNode.noSelection = true;
+        rootNode.createNodes = [];
+        rootNode.qId = 0;
+    },
+        _initCache : function (setting) {
+            var cache = data.getCache(setting);
+            if(!cache){
+                cache = {};
+                data.setCache(setting, cache);
+            }
+            cache.nodes = {};
+            cache.doms = {};
+        },
+        // 默认绑定事件
+        _bindEvent : function (setting){
+            var obj = setting.treeObj,
+                eventCName = consts.event;
+            obj.addEventListener(eventCName.NODECREATED, function (event, treeId, node) {
+                tools.apply(setting.callback.onNodeCreated, [event, treeId, node]);
+            });
+            obj.addEventListener(eventCName.CLICK, function (event, treeId, node, srcEvent, clickFlag) {
+                tools.apply(setting.callback.onClick, [srcEvent, treeId, node, clickFlag]);
+            });
+            obj.addEventListener(eventCName.EXPAND, function (event, treeId, node) {
+                tools.apply(setting.callback.onExpand, [event, treeId, node]);
+            });
+            obj.addEventListener(eventCName.COLLAPSE, function (event, treeId, node) {
+                tools.apply(setting.callback.onCollapse, [event, treeId, node]);
+            });
+            obj.addEventListener(eventCName.REMOVE, function (event, treeId, treeNode) {
+                tools.apply(setting.callback.onRemove, [event, treeId, treeNode]);
+            });
+            obj.addEventListener(eventCName.SELECTED, function (event, treeId, node) {
+                tools.apply(setting.callback.onSelected, [treeId, node]);
+            });
+            obj.addEventListener(eventCName.UNSELECTED, function (event, treeId, node) {
+                tools.apply(setting.callback.onUnSelected, [treeId, node]);
+            });
+        },
+        // 解除默认绑定事件
+        _unbindEvent : function (setting) {
+            var obj = setting.treeObj,
+                eventCName = consts.event;
+            obj.removeEventListener(eventCName.NODECREATED)
+                .removeEventListener(eventCName.CLICK)
+                .removeEventListener(eventCName.EXPAND)
+                .removeEventListener(eventCName.COLLAPSE)
+                .removeEventListener(eventCName.REMOVE)
+                .removeEventListener(eventCName.SELECTED)
+                .removeEventListener(eventCName.UNSELECTED);
+        },
+        _initNode : function(n,setting, parentId, level, lastNode, isFirstNode, isLastNode){
+            // n，传入的node节点信息
+            if(!n){
+                return;
+            }
+            var rootNode = data.getRoot(setting, n),
+                children = data.getChildrenNode(setting, n),
+                isParent = data.nodeIsParent(setting, n);
+            // 对传入的nose节点存储信息
+            n.level = level;
+            // treeId = _level_index
+            n.treeId = setting.treeId + "_" + n.level + "_" + index;
+            n.parentTreeId = parentNode ? parentNode.treeId : null;
+            n.isFirstNode = isFirstNode;
+            n.isLastNode = isLastNode;
+
+            // n具有的方法
+            n.getParentNode = function () {
+                return data.getNodeCache(setting, n.parentId);
+            };
+            n.getPreNode = function () {
+                return data.getPreNode(setting, n);
+            };
+            n.getNextNode = function () {
+                return data.getNextNode(setting, n);
+            };
+            n.getIndex = function () {
+                return data.getNodeIndex(setting, n);
+            };
+            n.getPath = function () {
+                return data.getNodePath(setting, n);
+            };
+        },
+        // methods of data
+        data : {
+            /************************ 添加 ********************/
+            // cache of node
+            addNodeCache: function (setting, node) {
                 this.getCache(setting).nodes[this.getNodeCacheId(node.treeId)] = node;
             },
-			getNodeCacheId: function (treeId) {
-				// 获取treeId在第二个"_"往后的数字
-				return treeId.substring(treeId.lastIndexOf("_") + 1);
+            getNodeCacheId: function (treeId) {
+                // 获取treeId在第二个"_"往后的数字
+                return treeId.substring(treeId.lastIndexOf("_") + 1);
             },
-			addAfterA: function (afterA) {
-				this._init.afterA.push(afterA);
+            addAfterA: function (afterA) {
+                this._init.afterA.push(afterA);
             },
-			addBeforeA: function (beforeA) {
-				this._init.beforeA.push(beforeA);
+            addBeforeA: function (beforeA) {
+                this._init.beforeA.push(beforeA);
             },
-			addInnerAfterA: function (innerAfterA) {
-				this._init.innerAfterA.push(innerAfterA);
+            addInnerAfterA: function (innerAfterA) {
+                this._init.innerAfterA.push(innerAfterA);
             },
-			addInnerBeforeA: function (innerBeforeA) {
-				this._init.innerBeforeA.push(innerBeforeA);
+            addInnerBeforeA: function (innerBeforeA) {
+                this._init.innerBeforeA.push(innerBeforeA);
             },
-			addInitBind: function (bindEvent) {
-				this._init.binds.push(bindEvent);
+            addInitBind: function (bindEvent) {
+                this._init.binds.push(bindEvent);
             },
-			addInitUnBind: function (unbindEvent) {
-				this._init.unbind.push(unbindEvent);
+            addInitUnBind: function (unbindEvent) {
+                this._init.unbind.push(unbindEvent);
             },
-			addInitCache: function (initCache) {
-				this._init.caches.push(initCache);
+            addInitCache: function (initCache) {
+                this._init.caches.push(initCache);
             },
-			addInitNode: function (initNode) {
-				this._init.nodes.push(initNode);
+            addInitNode: function (initNode) {
+                this._init.nodes.push(initNode);
             },
-			addInitRoot: function (initRoot) {
-				this._init.roots.push(initRoot);
+            addInitRoot: function (initRoot) {
+                this._init.roots.push(initRoot);
             },
-			addNodesData: function (setting, parentNode, index, nodes) {
-				var children = this.nodeChildren(setting, parentNode), params;
-				// 没有子节点
-				if (!children){
-					children = this.nodeChildren(setting, parentNode, []);
-					index = -1;
-				} else if(index >= children.length){
-					index = -1;
-				}
-				// 包含子节点
-				if (children.length > 0 && index === 0){
-					children[0].isFirstNode = false;
-					view.setNodeLineIcons(setting, children[0]);
-				} else if (children.length > 0 && index < 0){
-					children[children.length - 1].isLastNode = false;
+            addNodesData: function (setting, parentNode, index, nodes) {
+                var children = this.nodeChildren(setting, parentNode), params;
+                // 没有子节点
+                if (!children){
+                    children = this.nodeChildren(setting, parentNode, []);
+                    index = -1;
+                } else if(index >= children.length){
+                    index = -1;
+                }
+                // 包含子节点
+                if (children.length > 0 && index === 0){
+                    children[0].isFirstNode = false;
+                    view.setNodeLineIcons(setting, children[0]);
+                } else if (children.length > 0 && index < 0){
+                    children[children.length - 1].isLastNode = false;
                     view.setNodeLineIcons(setting, children[children.length - 1]);
-				}
-				this.nodeIsParent(setting, parentNode, true);
+                }
+                this.nodeIsParent(setting, parentNode, true);
 
-				if (index < 0) {
-					this.nodeChildren(setting, parentNode, children.concat(nodes));
-				}else {
-					params = [index, 0].concat(nodes);
-					children.splice.apply(children, params);
-				}
+                if (index < 0) {
+                    this.nodeChildren(setting, parentNode, children.concat(nodes));
+                }else {
+                    params = [index, 0].concat(nodes);
+                    children.splice.apply(children, params);
+                }
             },
-			addSelectedNode: function (setting, node) {
-				var root = this.getRoot(setting);
-				if (!this.isSelectedNode(setting, node)){
-					root.curSelectedList.push(node);
-				}
+            addSelectedNode: function (setting, node) {
+                var root = this.getRoot(setting);
+                if (!this.isSelectedNode(setting, node)){
+                    root.curSelectedList.push(node);
+                }
             },
             /************************ 获取 ********************/
-			getAfterA: function (setting, node, array) {
-				for (var i = 0, j = this._init.afterA.length; i < j; i++){
-					this._init.afterA[i].apply(this,arguments);
-				}
+            getAfterA: function (setting, node, array) {
+                for (var i = 0, j = this._init.afterA.length; i < j; i++){
+                    this._init.afterA[i].apply(this,arguments);
+                }
             },
-			getBeforeA: function (setting, node, array) {
+            getBeforeA: function (setting, node, array) {
                 for (var i = 0, j = this._init.beforeA.length; i < j; i++){
                     this._init.beforeA[i].apply(this,arguments);
                 }
@@ -224,44 +329,44 @@
                     this._init.beforeA[i].apply(this,arguments);
                 }
             },
-			getCache: function (setting) {
-				return this.caches[setting.treeId];
+            getCache: function (setting) {
+                return this.caches[setting.treeId];
             },
-			getRoot: function(setting){
-				return setting ? this.roots[setting.treeId] : null;
-			},
-			getRoots: function(){
-				return this.roots;
-			},
-			getSetting: function(treeId){
-				return this.settings[treeId];
-			},
-			getSettings: function(){
-				return this.settings;
-			},
+            getRoot: function(setting){
+                return setting ? this.roots[setting.treeId] : null;
+            },
+            getRoots: function(){
+                return this.roots;
+            },
+            getSetting: function(treeId){
+                return this.settings[treeId];
+            },
+            getSettings: function(){
+                return this.settings;
+            },
             // 获取根节点下所有节点
             getNodes: function (setting) {
                 return this.nodeChildren(setting, this.getRoot(setting));
             },
             // get node index bellow parentNode
-			getNodeIndex: function (setting, node) {
-				if(!node) return null;
-				//获取父节点
-				var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
-					//获取其父节点的所有子节点
-					children = this.nodeChildren(setting, parentNode);
-				for (var i = 0; i <= children.length - 1; i++){
-					if (children[i] === node){
-						//返回节点的下标，从0开始
-						return i;
-					}
-				}
-				return -1;
+            getNodeIndex: function (setting, node) {
+                if(!node) return null;
+                //获取父节点
+                var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
+                    //获取其父节点的所有子节点
+                    children = this.nodeChildren(setting, parentNode);
+                for (var i = 0; i <= children.length - 1; i++){
+                    if (children[i] === node){
+                        //返回节点的下标，从0开始
+                        return i;
+                    }
+                }
+                return -1;
             },
             getNextNode: function (setting, node) {
-				if (!node) return null;
-				var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
-					children = this.nodeChildren(setting, parentNode);
+                if (!node) return null;
+                var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
+                    children = this.nodeChildren(setting, parentNode);
                 for (var i = 0; i <= children.length - 1; i++){
                     if (children[i] === node){
                         //返回节点下一个节点
@@ -271,7 +376,7 @@
                 return null;
             },
             getPreNode: function(setting, node){
-				if(!node)return null;
+                if(!node)return null;
                 var parentNode = node.parentTreeId ? node.getParentNode() : this.getRoot(setting),
                     children = this.nodeChildren(setting, parentNode);
                 for (var i = 0; i <= children.length - 1; i++){
@@ -281,26 +386,26 @@
                     }
                 }
                 return null;
-			},
+            },
             getNodeCache: function (setting, treeId) {
-				if (!treeId) return null;
-				var n = caches[setting.treeId].nodes[this.getNodeCacheId(treeId)];
-				return n ? n : null;
+                if (!treeId) return null;
+                var n = caches[setting.treeId].nodes[this.getNodeCacheId(treeId)];
+                return n ? n : null;
             },
             // 获取节点的路径，如父节点-父节点1-节点
-			getNodePath: function (setting, node) {
-				if (!node) return null;
-				var path;
-				if (node.parentTreeId) {
-					path = node.getParentNode().getPath();
-				} else {
-					path = [];
-				}
+            getNodePath: function (setting, node) {
+                if (!node) return null;
+                var path;
+                if (node.parentTreeId) {
+                    path = node.getParentNode().getPath();
+                } else {
+                    path = [];
+                }
 
-				if (path) {
-					path.push(node);
-				}
-				return path;
+                if (path) {
+                    path.push(node);
+                }
+                return path;
             },
             nodeIsParent: function (setting, node, newIsParent) {
                 if (!node) {
@@ -316,24 +421,24 @@
                 }
                 return node[key];
             },
-			// 获取节点下的所有子节点，或为节点添加新的子节点
-			nodeChildren: function(setting, node, newChildren){
-				if (!node){
-					return null;
-				}
-				var key = setting.data.key.children;
-				if (typeof  newChildren !== "undefined"){
-					node[key] = newChildren;
-				}
-				return node[key];
-			},
-			nodeName: function(setting, node, newName){
+            // 获取节点下的所有子节点，或为节点添加新的子节点
+            nodeChildren: function(setting, node, newChildren){
+                if (!node){
+                    return null;
+                }
+                var key = setting.data.key.children;
+                if (typeof  newChildren !== "undefined"){
+                    node[key] = newChildren;
+                }
+                return node[key];
+            },
+            nodeName: function(setting, node, newName){
                 var key = setting.data.key.name;
                 if (typeof newName !== 'undefined') {
                     node[key] = newName;
                 }
                 return "" + node[key];
-			},
+            },
             nodeTitle: function (setting, node) {
                 var t = setting.data.key.title === "" ? setting.data.key.name : setting.data.key.title;
                 return "" + node[t];
@@ -343,7 +448,7 @@
             * 查询节点信息
             * */
             /* 全部匹配 */
-			// 一个个的出结果
+            // 一个个的出结果
             getNodeByParam: function (setting, nodes, key, value) {
                 if (!nodes || !key) return null;
                 for (var i = 0; i < nodes.length; i++){
@@ -371,8 +476,8 @@
                 }
                 return result;
             },
-			/* 模糊匹配 */
-			getNodesByParamFuzzy: function (setting, nodes, key, value) {
+            /* 模糊匹配 */
+            getNodesByParamFuzzy: function (setting, nodes, key, value) {
                 if (!nodes || !key) return [];
                 var result = [];
                 value = value.toLowerCase();
@@ -386,7 +491,7 @@
                 }
                 return result;
             },
-			/* 根据条件查询 */
+            /* 根据条件查询 */
             getNodesByFilter: function (setting, nodes, filter, isSingle, invokeParam) {
                 if (!nodes) return (isSingle ? null : []);
                 var result = isSingle ? null : [];
@@ -407,15 +512,15 @@
                 }
                 return result;
             },
-			getqTreeTools: function (treeId) {
-				var root = this.getRoot(this.getSetting(treeId));
-				return root ? root.treeTools : null;
+            getqTreeTools: function (treeId) {
+                var root = this.getRoot(this.getSetting(treeId));
+                return root ? root.treeTools : null;
             },
             /************************ 初始化 ********************/
             initCache: function (setting) {
-				for (var i = 0; i< this._init.caches.length; i++){
-					this._init.caches[i].apply(this, arguments);
-				}
+                for (var i = 0; i< this._init.caches.length; i++){
+                    this._init.caches[i].apply(this, arguments);
+                }
             },
             initNode: function (setting) {
                 for (var i = 0; i< this._init.nodes.length; i++){
@@ -423,16 +528,16 @@
                 }
             },
             initRoot: function (setting) {
-                for (var i = 0; i< this._init.roots.length; i++){
-                    this._init.roots[i].apply(this, arguments);
+                for (var i = 0; i< _init.roots.length; i++){
+                    _init.roots[i].apply(this, arguments);
                 }
             },
             /************************ 判断 ********************/
             isSelectedNode: function (setting, node) {
-				var root = this.getRoot(setting);
-				for (var i = 0; i < root.curSelectedList.length; i++){
-					if (node === root.curSelectedList[i]) return true;
-				}
+                var root = this.getRoot(setting);
+                for (var i = 0; i < root.curSelectedList.length; i++){
+                    if (node === root.curSelectedList[i]) return true;
+                }
             },
             /************************ 操作 ********************/
             // 删除
@@ -457,20 +562,20 @@
                 this.getCache(setting).nodes[this.getNodeCacheId(node.treeId)] = null;
             },
 
-			//设置
-			setCache: function (setting, cache) {
-				this.caches[setting.treeId] = cache;
+            //设置
+            setCache: function (setting, cache) {
+                this.caches[setting.treeId] = cache;
             },
-			setRoot: function (setting, root) {
-				this.roots[setting.treeId] = root;
+            setRoot: function (setting, root) {
+                this.roots[setting.treeId] = root;
             },
             setqTreeTools: function (setting, qTreeTools) {
-				for (var i = 0; i < this._init.qTreeTools.length; i++){
-					this._init.qTreeTools[i].apply(this, arguments);
-				}
+                for (var i = 0; i < this._init.qTreeTools.length; i++){
+                    this._init.qTreeTools[i].apply(this, arguments);
+                }
             },
-			// 转换为数组格式
-			transformToArrayFormat: function (setting, nodes) {
+            // 转换为数组格式
+            transformToArrayFormat: function (setting, nodes) {
                 if (!nodes) return [];
                 var r = [];
                 if (tools.isArray(nodes)) {
@@ -491,7 +596,7 @@
                     }
                 }
             },
-			// 转换为文件树格式
+            // 转换为文件树格式
             transformToqTreeFormat: function (setting, sNodes) {
                 var i, l,
                     key = setting.data.simpleData.idKey,
@@ -521,27 +626,27 @@
                     return [sNodes];
                 }
             }
-		},
-			// 事件代理方法
-		treeEvents = {
-			bindEvent: function (setting) {
-				for (var i = 0; i < this._init.binds.length; i++){
-					this._init.binds[i].apply(this, arguments);
-				}
+        },
+        // 事件代理方法
+        treeEvents : {
+            bindEvent: function (setting) {
+                for (var i = 0; i < this._init.binds.length; i++){
+                    this._init.binds[i].apply(this, arguments);
+                }
             },
-			unbindEvent: function (setting) {
+            unbindEvent: function (setting) {
                 for (var i = 0; i < this._init.unbind.length; i++){
                     this._init.unbind[i].apply(this, arguments);
                 }
             },
-			bindTree: function (setting) {
-				var eventParam = {
-				    treeId: setting.treeId
-                },
+            bindTree: function (setting) {
+                var eventParam = {
+                        treeId: setting.treeId
+                    },
                     obj = setting.treeObj;
-				if (!setting.view.txtSelectedEnable) {
-				    var cssPro = "-moz-user-select";
-				    obj.addEventListener('selectstart', this.handler.onSelectStart).style.cssPro = "-moz-none";
+                if (!setting.view.txtSelectedEnable) {
+                    var cssPro = "-moz-user-select";
+                    obj.addEventListener('selectstart', handlers.onSelectStart).style.cssPro = "-moz-none";
                 }
                 obj.addEventListener('click', eventParam, this.proxy);
                 obj.addEventListener('dblclick', eventParam, this.proxy);
@@ -553,7 +658,7 @@
             },
             unbindTree: function (setting) {
                 var o = setting.treeObj;
-                o.removeEventListener('selectstart', handler.onSelectStart)
+                o.removeEventListener('selectstart', handlers.onSelectStart)
                     .removeEventListener('click', this.proxy)
                     .removeEventListener('dblclick', this.proxy)
                     .removeEventListener('mouseover', this.proxy)
@@ -591,8 +696,8 @@
                 }
                 return r;
             }
-		},
-		handler = {
+        },
+        handlers : {
             onSwitchNode: function (event, node) {
                 var setting = data.getSetting(event.data.treeId);
                 if (node.open) {
@@ -651,9 +756,9 @@
                 return (n === "input" || n === "textarea");
             }
         },
-        tools = {
-		    apply: function (fun, param, defaultValue) {
-		        if ((typeof fun) === "function") {
+        tools : {
+            apply: function (fun, param, defaultValue) {
+                if ((typeof fun) === "function") {
                     return fun.apply(qt, param ? param : []);
                 }
                 return defaultValue;
@@ -686,7 +791,7 @@
                 if (!!exp && typeof exp !== "string") {
                     setting = exp;
                     exp = "";
-                } 
+                }
                 if (typeof node === "string") {
                     return this.$(node, setting ? setting.treeObj.get(0).ownerDocument : null);
                 } else {
@@ -706,7 +811,7 @@
                 return null;
             },
             getNodeMainDom: function (target) {
-                return (document.getElementById(target.id).parent("li").get(0) || $(target).parentsUntil("li").parent().get(0));
+                return (document.getElementById(target.id).parent("li").get(0) || document.getElementById(target).parentsUntil("li").parent().get(0));
             },
             isChildOrSelf: function (dom, parentId) {
                 return (document.getElementById(dom.id).closest("#" + parentId).length > 0);
@@ -715,8 +820,8 @@
                 return true;
             }
         },
-        view = {
-		    addNodes: function (setting, parentNode, index, newNodes, isSilent) {
+        view : {
+            addNodes: function (setting, parentNode, index, newNodes, isSilent) {
                 // 获取父节点存在的状态
                 var isParent = data.nodeIsParent(setting, parentNode);
                 // 若没有父节点，状态为false，是叶子节点
@@ -798,18 +903,18 @@
             },
             appendParentULDom: function (setting, node) {
                 var html = [],
-                    nObj = $$(node, setting);
+                    nObj = this.$(node, setting);
                 if (!nObj.get(0) && !!node.parentTreeId) {
-                    this.view.appendParentULDom(setting, node.getParentNode());
-                    nObj = $$(node, setting);
+                    this.appendParentULDom(setting, node.getParentNode());
+                    nObj = this.$(node, setting);
                 }
-                var ulObj = $$(node, this.consts.id.UL, setting);
+                var ulObj = this.$(node, consts.id.UL, setting);
                 if (ulObj.get(0)) {
                     ulObj.remove();
                 }
                 var children = data.nodeChildren(setting, node),
-                    childHtml = this.view.appendNodes(setting, node.level + 1, children, node, -1, false, true);
-                this.view.makeUlHtml(setting, node, html, childHtml.join(''));
+                    childHtml = this.appendNodes(setting, node.level + 1, children, node, -1, false, true);
+                this.makeUlHtml(setting, node, html, childHtml.join(''));
                 nObj.append(html.join(''));
             },
             asyncNode: function (setting, node, isSilent, callback) {
@@ -826,8 +931,8 @@
                 }
                 if (node) {
                     node.isAjaxing = true;
-                    var icoObj = $$(node, this.consts.id.ICON, setting);
-                    icoObj.setAttribute({"style": "", "class": this.consts.className.BUTTON + " " + this.consts.className.ICON_LOADING});
+                    var icoObj = this.$(node, consts.id.ICON, setting);
+                    icoObj.setAttribute({"style": "", "class": consts.className.BUTTON + " " + consts.className.ICON_LOADING});
                 }
 
                 var tmpParam = {};
@@ -886,7 +991,7 @@
                         } else {
                             this.view.addNodes(setting, node, -1, [], !!isSilent);
                         }
-                        setting.treeObj.trigger(this.consts.event.ASYNC_SUCCESS, [setting.treeId, node, msg]);
+                        setting.treeObj.trigger(consts.event.ASYNC_SUCCESS, [setting.treeId, node, msg]);
                         tools.apply(callback);
                     }else {
                         if (_tmpV !== data.getRoot(setting)._ver) {
@@ -894,7 +999,7 @@
                         }
                         if (node) node.isAjaxing = null;
                         this.setNodeLineIcons(setting, node);
-                        setting.treeObj.trigger(this.consts.event.ASYNC_ERROR, [setting.treeId, node, XMLHttpRequest, textStatus, errorThrown]);
+                        setting.treeObj.trigger(consts.event.ASYNC_ERROR, [setting.treeId, node, XMLHttpRequest, textStatus, errorThrown]);
                     }
                 };
                 xhr.send(setting.async.contentType.indexOf('application/json') > -1 ? JSON.stringify(tmpParam) : tmpParam);
@@ -955,15 +1060,15 @@
                 for (i = list.length - 1; i >= 0; i--) {
                     n = list[i];
                     if (node === n || (!node && (!excludeNode || excludeNode !== n))) {
-                        var id = this.$(n, this.consts.id.A, setting);
-                        document.getElementById(id).classList.remove(this.consts.node.SELECTEDNODE);
+                        var id = this.$(n, consts.id.A, setting);
+                        document.getElementById(id).classList.remove(consts.node.SELECTEDNODE);
                         if (node) {
                             data.removeSelectedNode(setting, node);
                             break;
                         } else {
                             list.splice(i, 1);
                             // TODO
-                            setting.treeObj.trigger(this.consts.event.UNSELECTED, [setting.treeId, n]);
+                            setting.treeObj.trigger(consts.event.UNSELECTED, [setting.treeId, n]);
                         }
                     }
                 }
@@ -975,7 +1080,7 @@
                         var node = root.createdNodes.shift();
                         tools.apply(setting.view.addDiyDom, [setting.treeId, node]);
                         if (!!setting.callback.onNodeCreated) {
-                            setting.treeObj.trigger(this.consts.event.NODECREATED, [setting.treeId, node]);
+                            setting.treeObj.trigger(consts.event.NODECREATED, [setting.treeId, node]);
                         }
                     }
                 }
@@ -983,7 +1088,7 @@
             createNodes: function(setting, level, nodes, parentNode, index) {
                 if (!nodes || nodes.length === 0) return;
                 var root = data.getRoot(setting),
-                    openFlag = !parentNode || parentNode.open || !!$$(data.nodeChildren(setting, parentNode)[0], setting).get(0);
+                    openFlag = !parentNode || parentNode.open || !!this.$(data.nodeChildren(setting, parentNode)[0], setting).get(0);
                 root.createdNodes = [];
                 var zTreeHtml = this.appendNodes(setting, level, nodes, parentNode, index, true, openFlag),
                     parentObj, nextObj;
@@ -992,7 +1097,7 @@
                     parentObj = setting.treeObj;
                     //setting.treeObj.append(zTreeHtml.join(''));
                 } else {
-                    var ulObj = $$(parentNode, this.consts.id.UL, setting);
+                    var ulObj = this.$(parentNode, consts.id.UL, setting);
                     if (ulObj.get(0)) {
                         parentObj = ulObj;
                         //ulObj.append(zTreeHtml.join(''));
@@ -1003,7 +1108,7 @@
                         nextObj = parentObj.children()[index];
                     }
                     if (index >= 0 && nextObj) {
-                        $(nextObj).before(zTreeHtml.join(''));
+                        document.getElementById(nextObj).before(zTreeHtml.join(''));
                     } else {
                         parentObj.append(zTreeHtml.join(''));
                     }
@@ -1017,7 +1122,7 @@
                 data.initRoot(setting);
                 treeEvents.unbindTree(setting);
                 treeEvents.unbindEvent(setting);
-                setting.treeObj.empty();
+                setting.treeObj.innerHTML = '';
                 delete this.settings[setting.treeId];
             },
             expandCollapseNode: function (setting, node, expandFlag, animateFlag, callback) {
@@ -1034,15 +1139,15 @@
                     tmpCb = function () {
                         if (_callback) _callback();
                         if (node.open) {
-                            setting.treeObj.trigger(this.consts.event.EXPAND, [setting.treeId, node]);
+                            setting.treeObj.trigger(consts.event.EXPAND, [setting.treeId, node]);
                         } else {
-                            setting.treeObj.trigger(this.consts.event.COLLAPSE, [setting.treeId, node]);
+                            setting.treeObj.trigger(consts.event.COLLAPSE, [setting.treeId, node]);
                         }
                     };
                     callback = tmpCb;
                     root.expandTriggerFlag = false;
                 }
-                if (!node.open && isParent && ((!$$(node, this.consts.id.UL, setting).get(0)) || (children && children.length > 0 && !$$(children[0], setting).get(0)))) {
+                if (!node.open && isParent && ((!$$(node, consts.id.UL, setting).get(0)) || (children && children.length > 0 && !$$(children[0], setting).get(0)))) {
                     this.appendParentULDom(setting, node);
                     this.createNodeCallback(setting);
                 }
@@ -1051,9 +1156,9 @@
                     return;
                 }
 
-                var ulObj = document.getElementById(this.$(node, this.consts.id.UL, setting)),
-                    switchObj = document.getElementById(this.$(node, this.consts.id.SWITCH, setting)),
-                    icoObj = document.getElementById(this.$(node, this.consts.id.ICON, setting));
+                var ulObj = this.$(node, consts.id.UL, setting),
+                    switchObj = this.$(node, consts.id.SWITCH, setting),
+                    icoObj = this.$(node, consts.id.ICON, setting);
 
                 if (isParent) {
                     node.open = !node.open;
@@ -1062,8 +1167,8 @@
                     }
 
                     if (node.open) {
-                        this.replaceSwitchClass(node, switchObj, this.consts.folder.OPEN);
-                        this.replaceIconClass(node, icoObj, this.consts.folder.OPEN);
+                        this.replaceSwitchClass(node, switchObj, consts.folder.OPEN);
+                        this.replaceIconClass(node, icoObj, consts.folder.OPEN);
                         if (animateFlag === false || setting.view.expandSpeed === "") {
                             ulObj.show();
                             tools.apply(callback, []);
@@ -1076,10 +1181,10 @@
                             }
                         }
                     } else {
-                        this.replaceSwitchClass(node, switchObj, this.consts.folder.CLOSE);
-                        this.replaceIconClass(node, icoObj, this.consts.folder.CLOSE);
+                        this.replaceSwitchClass(node, switchObj, consts.folder.CLOSE);
+                        this.replaceIconClass(node, icoObj, consts.folder.CLOSE);
                         if (animateFlag === false || setting.view.expandSpeed === "" || !(children && children.length > 0)) {
-                            ulObj.hide();
+                            ulObj.style.display = "none";
                             tools.apply(callback, []);
                         } else {
                             ulObj.slideUp(setting.view.expandSpeed, callback);
@@ -1092,13 +1197,13 @@
             expandCollapseParentNode: function (setting, node, expandFlag, animateFlag, callback) {
                 if (!node) return;
                 if (!node.parentTreeId) {
-                    this.view.expandCollapseNode(setting, node, expandFlag, animateFlag, callback);
+                    this.expandCollapseNode(setting, node, expandFlag, animateFlag, callback);
                     return;
                 } else {
-                    this.view.expandCollapseNode(setting, node, expandFlag, animateFlag);
+                    this.expandCollapseNode(setting, node, expandFlag, animateFlag);
                 }
-                if (node.parentTId) {
-                    this.view.expandCollapseParentNode(setting, node.getParentNode(), expandFlag, animateFlag, callback);
+                if (node.parentTreeId) {
+                    this.expandCollapseParentNode(setting, node.getParentNode(), expandFlag, animateFlag, callback);
                 }
             },
             expandCollapseSonNode: function (setting, node, expandFlag, animateFlag, callback) {
@@ -1109,11 +1214,11 @@
                 data.getRoot(setting).expandTriggerFlag = false;
                 if (treeNodes) {
                     for (var i = 0, l = treeNodes.length; i < l; i++) {
-                        if (treeNodes[i]) this.view.expandCollapseSonNode(setting, treeNodes[i], expandFlag, selfAnimateSign);
+                        if (treeNodes[i]) this.expandCollapseSonNode(setting, treeNodes[i], expandFlag, selfAnimateSign);
                     }
                 }
                 data.getRoot(setting).expandTriggerFlag = expandTriggerFlag;
-                this.view.expandCollapseNode(setting, node, expandFlag, animateFlag, callback);
+                this.expandCollapseNode(setting, node, expandFlag, animateFlag, callback);
             },
             isSelectedNode: function (setting, node) {
                 if (!node) {
@@ -1130,35 +1235,35 @@
             },
             makeDOMNodeIcon: function (html, setting, node) {
                 var nameStr = data.nodeName(setting, node),
-                    name = this.setting.view.nameIsHTML ? nameStr : nameStr.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                html.push("<span id='", node.treeId, this.consts.id.ICON,
-                    "' title='' treeNode", this.consts.id.ICON, " class='", this.view.makeNodeIcoClass(setting, node),
-                    "' style='", this.view.makeNodeIcoStyle(setting, node), "'></span><span id='", node.treeId, this.consts.id.SPAN,
-                    "' class='", this.consts.className.NAME,
+                    name = setting.view.nameIsHTML ? nameStr : nameStr.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                html.push("<span id='", node.treeId, consts.id.ICON,
+                    "' title='' treeNode", consts.id.ICON, " class='", this.makeNodeIcoClass(setting, node),
+                    "' style='", this.makeNodeIcoStyle(setting, node), "'></span><span id='", node.treeId, consts.id.SPAN,
+                    "' class='", consts.className.NAME,
                     "'>", name, "</span>");
             },
             makeDOMNodeLine: function (html, setting, node) {
-                html.push("<span id='", node.treeId, this.consts.id.SWITCH, "' title='' class='", this.view.makeNodeLineClass(setting, node), "' treeNode", this.consts.id.SWITCH, "></span>");
+                html.push("<span id='", node.treeId, consts.id.SWITCH, "' title='' class='", this.makeNodeLineClass(setting, node), "' treeNode", consts.id.SWITCH, "></span>");
             },
             makeDOMNodeMainAfter: function (html, setting, node) {
                 html.push("</li>");
             },
             makeDOMNodeMainBefore: function (html, setting, node) {
-                html.push("<li id='", node.treeId, "' class='", this.consts.className.LEVEL, node.level, "' tabindex='0' hidefocus='true' treenode>");
+                html.push("<li id='", node.treeId, "' class='", consts.className.LEVEL, node.level, "' tabindex='0' hidefocus='true' treenode>");
             },
             makeDOMNodeNameAfter: function (html, setting, node) {
                 html.push("</a>");
             },
             makeDOMNodeNameBefore: function (html, setting, node) {
                 var title = data.nodeTitle(setting, node),
-                    url = this.view.makeNodeUrl(setting, node),
-                    fontcss = this.view.makeNodeFontCss(setting, node),
+                    url = this.makeNodeUrl(setting, node),
+                    fontcss = this.makeNodeFontCss(setting, node),
                     fontStyle = [];
                 for (var f in fontcss) {
                     fontStyle.push(f, ":", fontcss[f], ";");
                 }
-                html.push("<a id='", node.treeId, this.consts.id.A, "' class='", this.consts.className.LEVEL, node.level, "' treeNode", this.consts.id.A, " onclick=\"", (node.click || ''),
-                    "\" ", ((url != null && url.length > 0) ? "href='" + url + "'" : ""), " target='", this.view.makeNodeTarget(node), "' style='", fontStyle.join(''),
+                html.push("<a id='", node.treeId, consts.id.A, "' class='", consts.className.LEVEL, node.level, "' treeNode", consts.id.A, " onclick=\"", (node.click || ''),
+                    "\" ", ((url != null && url.length > 0) ? "href='" + url + "'" : ""), " target='", this.makeNodeTarget(node), "' style='", fontStyle.join(''),
                     "'");
                 if (tools.apply(setting.view.showTitle, [setting.treeId, node], setting.view.showTitle) && title) {
                     html.push("title='", title.replace(/'/g, "&#39;").replace(/</g, '&lt;').replace(/>/g, '&gt;'), "'");
@@ -1166,7 +1271,7 @@
                 html.push(">");
             },
             makeNodeFontCss: function (setting, node) {
-                var fontCss = tools.apply(setting.view.fontCss, [setting.treeId, node], setting.view.fontCss);
+                var fontCss = tools.apply(setting.view.fontCSS, [setting.treeId, node], setting.view.fontCSS);
                 return (fontCss && ((typeof fontCss) !== "function")) ? fontCss : {};
             },
             makeNodeIcoClass: function (setting, node) {
@@ -1177,7 +1282,7 @@
                     if (isParent) {
                         icoCss.push(node.open ? this.consts.folder.OPEN : this.consts.folder.CLOSE);
                     } else {
-                        icoCss.push(this.consts.folder.DOCU);
+                        icoCss.push(this.consts.folder.FILE);
                     }
                 }
                 return this.consts.className.BUTTON + " " + icoCss.join('_');
@@ -1198,26 +1303,26 @@
                 var lineClass = [];
                 if (setting.view.showLine) {
                     if (node.level === 0 && node.isFirstNode && node.isLastNode) {
-                        lineClass.push(this.consts.line.ROOT);
+                        lineClass.push(consts.line.ROOT);
                     } else if (node.level === 0 && node.isFirstNode) {
-                        lineClass.push(this.consts.line.ROOTS);
+                        lineClass.push(consts.line.ROOTS);
                     } else if (node.isLastNode) {
-                        lineClass.push(this.consts.line.BOTTOM);
+                        lineClass.push(consts.line.BOTTOM);
                     } else {
-                        lineClass.push(this.consts.line.CENTER);
+                        lineClass.push(consts.line.CENTER);
                     }
                 } else {
-                    lineClass.push(this.consts.line.NOLINE);
+                    lineClass.push(consts.line.NOLINE);
                 }
                 if (data.nodeIsParent(setting, node)) {
-                    lineClass.push(node.open ? this.consts.folder.OPEN : this.consts.folder.CLOSE);
+                    lineClass.push(node.open ? consts.folder.OPEN : consts.folder.CLOSE);
                 } else {
-                    lineClass.push(this.consts.folder.DOCU);
+                    lineClass.push(consts.folder.FILE);
                 }
-                return this.view.makeNodeLineClassEx(node) + lineClass.join('_');
+                return this.makeNodeLineClassEx(node) + lineClass.join('_');
             },
             makeNodeLineClassEx: function (node) {
-                return this.consts.className.BUTTON + " " + this.consts.className.LEVEL + node.level + " " + this.consts.className.SWITCH + " ";
+                return consts.className.BUTTON + " " + consts.className.LEVEL + node.level + " " + consts.className.SWITCH + " ";
             },
             makeNodeTarget: function (node) {
                 return (node.target || "_blank");
@@ -1227,12 +1332,12 @@
                 return node[urlKey] ? node[urlKey] : null;
             },
             makeUlHtml: function (setting, node, html, content) {
-                html.push("<ul id='", node.treeId, this.consts.id.UL, "' class='", this.consts.className.LEVEL, node.level, " ", this.view.makeUlLineClass(setting, node), "' style='display:", (node.open ? "block" : "none"), "'>");
+                html.push("<ul id='", node.treeId, consts.id.UL, "' class='", consts.className.LEVEL, node.level, " ", this.makeUlLineClass(setting, node), "' style='display:", (node.open ? "block" : "none"), "'>");
                 html.push(content);
                 html.push("</ul>");
             },
             makeUlLineClass: function (setting, node) {
-                return ((setting.view.showLine && !node.isLastNode) ? this.consts.line.LINE : "");
+                return ((setting.view.showLine && !node.isLastNode) ? consts.line.LINE : "");
             },
             removeChildNodes: function (setting, node) {
                 if (!node) return;
@@ -1248,13 +1353,13 @@
                 if (!setting.data.keep.parent) {
                     data.nodeIsParent(setting, node, false);
                     node.open = false;
-                    var tmp_switchObj = $$(node, this.consts.id.SWITCH, setting),
-                        tmp_icoObj = $$(node, this.consts.id.ICON, setting);
-                    this.view.replaceSwitchClass(node, tmp_switchObj, this.consts.folder.FILE);
-                    this.view.replaceIconClass(node, tmp_icoObj, this.consts.folder.FILE);
-                    $$(node, this.consts.id.UL, setting).remove();
+                    var tmp_switchObj = this.$(node, consts.id.SWITCH, setting),
+                        tmp_icoObj = this.$(node, consts.id.ICON, setting);
+                    this.replaceSwitchClass(node, tmp_switchObj, consts.folder.FILE);
+                    this.replaceIconClass(node, tmp_icoObj, consts.folder.FILE);
+                    this.$(node, consts.id.UL, setting).remove();
                 } else {
-                    $$(node, this.consts.id.UL, setting).empty();
+                    this.$(node, consts.id.UL, setting).innerHTML = '';
                 }
             },
             scrollIntoView: function (setting, dom) {
@@ -1361,17 +1466,17 @@
                     return null;
                 };
 
-                if (!data.getNodeCache(setting, node.tId)) {
+                if (!data.getNodeCache(setting, node.treeId)) {
                     return;
                 }
 
-                $$(node, setting).remove();
+                this.$(node, setting).remove();
                 data.removeNodeCache(setting, node);
                 data.removeSelectedNode(setting, node);
 
                 var children = data.nodeChildren(setting, parentNode);
                 for (var i = 0, l = children.length; i < l; i++) {
-                    if (children[i].tId == node.tId) {
+                    if (children[i].treeId === node.treeId) {
                         children.splice(i, 1);
                         break;
                     }
@@ -1383,47 +1488,47 @@
                     childLength = children.length;
 
                 //repair nodes old parent
-                if (!setting.data.keep.parent && childLength == 0) {
+                if (!setting.data.keep.parent && childLength === 0) {
                     //old parentNode has no child nodes
                     data.nodeIsParent(setting, parentNode, false);
                     parentNode.open = false;
                     delete parentNode[setting.data.key.children];
-                    tmp_ulObj = $$(parentNode, consts.id.UL, setting);
-                    tmp_switchObj = $$(parentNode, consts.id.SWITCH, setting);
-                    tmp_icoObj = $$(parentNode, consts.id.ICON, setting);
-                    view.replaceSwitchClass(parentNode, tmp_switchObj, consts.folder.DOCU);
-                    view.replaceIcoClass(parentNode, tmp_icoObj, consts.folder.DOCU);
-                    tmp_ulObj.css("display", "none");
+                    tmp_ulObj = this.$(parentNode, consts.id.UL, setting);
+                    tmp_switchObj = this.$(parentNode, consts.id.SWITCH, setting);
+                    tmp_icoObj = this.$(parentNode, consts.id.ICON, setting);
+                    view.replaceSwitchClass(parentNode, tmp_switchObj, consts.folder.FILE);
+                    view.replaceIconClass(parentNode, tmp_icoObj, consts.folder.FILE);
+                    tmp_ulObj.style.display = "none";
 
                 } else if (setting.view.showLine && childLength > 0) {
                     //old parentNode has child nodes
                     var newLast = children[childLength - 1];
-                    tmp_ulObj = $$(newLast, consts.id.UL, setting);
-                    tmp_switchObj = $$(newLast, consts.id.SWITCH, setting);
-                    tmp_icoObj = $$(newLast, consts.id.ICON, setting);
-                    if (parentNode == root) {
-                        if (children.length == 1) {
-                            //node was root, and ztree has only one root after move node
+                    tmp_ulObj = this.$(newLast, consts.id.UL, setting);
+                    tmp_switchObj = this.$(newLast, consts.id.SWITCH, setting);
+                    tmp_icoObj = this.$(newLast, consts.id.ICON, setting);
+                    if (parentNode === root) {
+                        if (children.length === 1) {
+                            //node was root, and qtree has only one root after move node
                             view.replaceSwitchClass(newLast, tmp_switchObj, consts.line.ROOT);
                         } else {
-                            var tmp_first_switchObj = $$(children[0], consts.id.SWITCH, setting);
+                            var tmp_first_switchObj = this.$(children[0], consts.id.SWITCH, setting);
                             view.replaceSwitchClass(children[0], tmp_first_switchObj, consts.line.ROOTS);
                             view.replaceSwitchClass(newLast, tmp_switchObj, consts.line.BOTTOM);
                         }
                     } else {
                         view.replaceSwitchClass(newLast, tmp_switchObj, consts.line.BOTTOM);
                     }
-                    tmp_ulObj.removeClass(consts.line.LINE);
+                    tmp_ulObj.classList.remove(consts.line.LINE);
                 }
             },
             replaceSwitchClass: function (node, obj, newName) {
-                
+
             },
             replaceIconClass: function (node, obj, newName) {
-                
+
             },
             selectNode: function (setting, node, addFlag) {
-                
+
             },
             setNodeFontCss: function (setting, treeNode) {
                 var aObj = $$(treeNode, this.consts.id.A, setting),
@@ -1434,47 +1539,47 @@
             },
             setNodeLineIcons: function (setting, node) {
                 if (!node) return;
-                var switchObj = $$(node, this.consts.id.SWITCH, setting),
-                    ulObj = $$(node, this.consts.id.UL, setting),
-                    icoObj = $$(node, this.consts.id.ICON, setting),
-                    ulLine = this.view.makeUlLineClass(setting, node);
-                if (ulLine.length == 0) {
-                    ulObj.classList.remove(this.consts.line.LINE);
+                var switchObj = this.$(node, this.consts.id.SWITCH, setting),
+                    ulObj = this.$(node, this.consts.id.UL, setting),
+                    icoObj = this.$(node, this.consts.id.ICON, setting),
+                    ulLine = this.makeUlLineClass(setting, node);
+                if (ulLine.length === 0) {
+                    ulObj.classList.remove(consts.line.LINE);
                 } else {
                     ulObj.classList.add(ulLine);
                 }
-                switchObj.setAttribute("class", this.view.makeNodeLineClass(setting, node));
+                switchObj.setAttribute("class", this.makeNodeLineClass(setting, node));
                 if (data.nodeIsParent(setting, node)) {
                     switchObj.removeAttribute("disabled");
                 } else {
                     switchObj.setAttribute("disabled", "disabled");
                 }
                 icoObj.removeAttribute("style");
-                icoObj.setAttribute("style", this.view.makeNodeIcoStyle(setting, node));
-                icoObj.setAttribute("class", this.view.makeNodeIcoClass(setting, node));
+                icoObj.setAttribute("style", this.makeNodeIcoStyle(setting, node));
+                icoObj.setAttribute("class", this.makeNodeIcoClass(setting, node));
             },
             setNodeName: function (setting, node) {
                 var title = data.nodeTitle(setting, node),
-                    nObj = $$(node, this.consts.id.SPAN, setting);
-                nObj.empty();
+                    nObj = this.$(node, consts.id.SPAN, setting);
+                nObj.innerHTML = '';
                 if (setting.view.nameIsHTML) {
-                    nObj.html(data.nodeName(setting, node));
+                    nObj.innerHTML(data.nodeName(setting, node));
                 } else {
                     nObj.text(data.nodeName(setting, node));
                 }
                 if (tools.apply(setting.view.showTitle, [setting.treeId, node], setting.view.showTitle)) {
-                    var aObj = $$(node, this.consts.id.A, setting);
+                    var aObj = this.$(node, consts.id.A, setting);
                     aObj.setAttribute("title", !title ? "" : title);
                 }
             },
             setNodeTarget: function (setting, node) {
-                var aObj = $$(node, this.consts.id.A, setting);
-                aObj.setAttribute("target", this.view.makeNodeTarget(node));
+                var aObj = this.$(node, consts.id.A, setting);
+                aObj.setAttribute("target", this.makeNodeTarget(node));
             },
             setNodeUrl: function (setting, node) {
-                var aObj = $$(node, this.consts.id.A, setting),
-                    url = this.view.makeNodeUrl(setting, node);
-                if (url == null || url.length == 0) {
+                var aObj = this.$(node, consts.id.A, setting),
+                    url = this.makeNodeUrl(setting, node);
+                if (url == null || url.length === 0) {
                     aObj.removeAttribute("href");
                 } else {
                     aObj.setAttribute("href", url);
@@ -1482,122 +1587,17 @@
             },
             switchNode: function (setting, node) {
                 if (node.open || !tools.canAsync(setting, node)) {
-                    this.view.expandCollapseNode(setting, node, !node.open);
+                    this.expandCollapseNode(setting, node, !node.open);
                 } else if (setting.async.enable) {
-                    if (!this.view.asyncNode(setting, node)) {
-                        this.view.expandCollapseNode(setting, node, !node.open);
-                        return;
+                    if (!this.asyncNode(setting, node)) {
+                        this.expandCollapseNode(setting, node, !node.open);
+                        return ;
                     }
                 } else if (node) {
-                    this.view.expandCollapseNode(setting, node, !node.open);
+                    this.expandCollapseNode(setting, node, !node.open);
                 }
             }
         },
-        this._initRoot = function (setting){
-            var rootNode = data.getRoot(setting);
-            if(!rootNode) {
-                rootNode = {};
-                data.setRoot(setting, rootNode);
-            }
-            data.nodeChildren(setting, rootNode, []);
-            rootNode.expandTriggerFlag = false;
-            rootNode.curSelectedList = [];
-            rootNode.noSelection = true;
-            rootNode.createNodes = [];
-            rootNode.qId = 0;
-        },
-        this._initCache = function (setting) {
-            var cache = data.getCache(setting);
-            if(!cache){
-                cache = {};
-                data.setCache(setting, cache);
-            }
-            cache.nodes = {};
-            cache.doms = {};
-        },
-        // 默认绑定事件
-        this._bindEvent = function (setting){
-            var obj = setting.treeObj,
-                eventCName = consts.event;
-            obj.addEventListener(eventCName.NODECREATED, function (event, treeId, node) {
-                tools.apply(setting.callback.onNodeCreated, [event, treeId, node]);
-            });
-            obj.addEventListener(eventCName.CLICK, function (event, treeId, node, srcEvent, clickFlag) {
-                tools.apply(setting.callback.onClick, [srcEvent, treeId, node, clickFlag]);
-            });
-            obj.addEventListener(eventCName.EXPAND, function (event, treeId, node) {
-                tools.apply(setting.callback.onExpand, [event, treeId, node]);
-            });
-            obj.addEventListener(eventCName.COLLAPSE, function (event, treeId, node) {
-                tools.apply(setting.callback.onCollapse, [event, treeId, node]);
-            });
-            obj.addEventListener(eventCName.REMOVE, function (event, treeId, treeNode) {
-                tools.apply(setting.callback.onRemove, [event, treeId, treeNode]);
-            });
-            obj.addEventListener(eventCName.SELECTED, function (event, treeId, node) {
-                tools.apply(setting.callback.onSelected, [treeId, node]);
-            });
-            obj.addEventListener(eventCName.UNSELECTED, function (event, treeId, node) {
-                tools.apply(setting.callback.onUnSelected, [treeId, node]);
-            });
-        },
-        // 解除默认绑定事件
-        this._unbindEvent = function (setting) {
-            var obj = setting.treeObj,
-                eventCName = consts.event;
-            obj.removeEventListener(eventCName.NODECREATED)
-                .removeEventListener(eventCName.CLICK)
-                .removeEventListener(eventCName.EXPAND)
-                .removeEventListener(eventCName.COLLAPSE)
-                .removeEventListener(eventCName.REMOVE)
-                .removeEventListener(eventCName.SELECTED)
-                .removeEventListener(eventCName.UNSELECTED);
-        },
-        this._initNode = function(n,setting, parentId, level, lastNode, isFirstNode, isLastNode){
-            // n，传入的node节点信息
-            if(!n){
-                return;
-            }
-            var rootNode = data.getRoot(setting, n),
-                children = data.getChildrenNode(setting, n),
-                isParent = data.nodeIsParent(setting, n);
-            // 对传入的nose节点存储信息
-            n.level = level;
-            // treeId = _level_index
-            n.treeId = setting.treeId + "_" + n.level + "_" + index;
-            n.parentTreeId = parentNode ? parentNode.treeId : null;
-            n.isFirstNode = isFirstNode;
-            n.isLastNode = isLastNode;
-
-            // n具有的方法
-            n.getParentNode = function () {
-                return data.getNodeCache(setting, n.parentId);
-            };
-            n.getPreNode = function () {
-                return data.getPreNode(setting, n);
-            };
-            n.getNextNode = function () {
-                return data.getNextNode(setting, n);
-            };
-            n.getIndex = function () {
-                return data.getNodeIndex(setting, n);
-            };
-            n.getPath = function () {
-                return data.getNodePath(setting, n);
-            };
-        }
-	    /****************** 定义赋值 ******************/
-	    this.consts = this._const,
-	    this._z = {
-	        tools: tools,
-            view: view,
-            event: treeEvents,
-            data: data,
-            handler: handler
-        }
-	}
-
-	qTree.prototype = {
         getqTreeObj : function(treeId){
             var obj = data.getqTreeTools(treeId);
             return obj ? obj : null;
@@ -1612,13 +1612,14 @@
             }
         },
         init : function(obj, qSetting, qNodes) {
+
             var setting = tools.clone(this._setting);
             // js中使用深拷贝,将qSetting深拷贝到setting上(object,target)
             this.deepCopy(qSetting, setting);
 
             setting.treeId = obj.getAttribute("id");
             setting.treeObj = obj;
-            setting.treeObj.empty();
+            setting.treeObj.innerHTML = '';
             this.settings[setting.treeId] = setting;
 
             // for old browser,(e.g., IE6)
@@ -1661,24 +1662,24 @@
                     var qNewNodes = tools.clone(tools.isArray(newNodes) ? newNodes : [newNodes]);
 
                     function addCallback() {
-                        this.view.addNodes(setting, parentNode, index, qNewNodes, (isSilent === true));
+                        view.addNodes(setting, parentNode, index, qNewNodes, (isSilent === true));
                     }
                     if (tools.canAsync(setting, parentNode)) {
-                        this.view.asyncNode(setting, parentNode, isSilent, addCallback);
+                        view.asyncNode(setting, parentNode, isSilent, addCallback);
                     } else {
                         addCallback();
                     }
                     return qNewNodes;
                 },
                 cancelSelectedNode: function (node) {
-                    this.view.cancelPreSelectedNode(setting, node);
+                    view.cancelPreSelectedNode(setting, node);
                 },
                 destroy: function () {
-                    this.view.destroy(setting);
+                    view.destroy(setting);
                 },
                 expandAll: function (expandFlag) {
                     expandFlag = !!expandFlag;
-                    this.view.expandCollapseSonNode(setting, null, expandFlag, true);
+                    view.expandCollapseSonNode(setting, null, expandFlag, true);
                     return expandFlag;
                 },
                 expandNode: function (node, expandFlag, sonSign, focus, callbackFlag) {
@@ -1693,7 +1694,7 @@
                     } else if (callbackFlag && !expandFlag && (tools.apply(setting.callback.beforeCollapse, [setting.treeId, node], true) === false)) {
                         return null;
                     }
-                    if (expandFlag && node.parentTId) {
+                    if (expandFlag && node.parentTreeId) {
                         view.expandCollapseParentNode(setting, node.getParentNode(), expandFlag, false);
                     }
                     if (expandFlag === node.open && !sonSign) {
@@ -1711,7 +1712,7 @@
                     return expandFlag;
 
                     function showNodeFocus() {
-                        var a = $$(node, setting).get(0);
+                        var a = this.$(node, setting).get(0);
                         if (a && focus !== false) {
                             view.scrollIntoView(setting, a);
                         }
@@ -1745,7 +1746,7 @@
                     var parentNode = (node.parentTreeId) ? node.getParentNode() : data.getRoot(setting);
                     var children = data.nodeChildren(setting, parentNode);
                     for (var i = 0, l = children.length; i < l; i++) {
-                        if (children[i] == node) return i;
+                        if (children[i] === node) return i;
                     }
                     return -1;
                 },
@@ -1785,34 +1786,34 @@
                         data.removeSelectedNode(setting);
                         data.nodeChildren(setting, parentNode, []);
                         if (isRoot) {
-                            this.setting.treeObj.empty();
+                            this.setting.treeObj.innerHTML = '';
                         } else {
-                            var ulObj = document.getElementById(this.$(parentNode, this.consts.id.UL, setting));
-                            ulObj.empty();
+                            var ulObj = this.$(parentNode, consts.id.UL, setting);
+                            ulObj.innerHTML = '';
                         }
                     }
-                    this.view.asyncNode(this.setting, isRoot ? null : parentNode, !!isSilent, callback);
+                    view.asyncNode(this.setting, isRoot ? null : parentNode, !!isSilent, callback);
                 },
                 refresh: function () {
-                    this.setting.treeObj.empty();
+                    this.setting.treeObj.innerHTML = '';
                     var root = data.getRoot(setting),
                         nodes = data.nodeChildren(setting, root);
                     data.initRoot(setting);
                     data.nodeChildren(setting, root, nodes);
                     data.initCache(setting);
-                    this.view.createNodes(setting, 0, data.nodeChildren(setting, root), null, -1);
+                    view.createNodes(setting, 0, data.nodeChildren(setting, root), null, -1);
                 },
                 removeChildNodes: function (node) {
                     if (!node) return null;
                     var nodes = data.nodeChildren(setting, node);
-                    this.view.removeChildNodes(setting, node);
+                    view.removeChildNodes(setting, node);
                     return nodes ? nodes : null;
                 },
                 removeNode: function (node, callbackFlag) {
                     if (!node) return;
                     callbackFlag = !!callbackFlag;
                     if (callbackFlag && tools.apply(setting.callback.beforeRemove, [setting.treeId, node], true) === false) return;
-                    this.view.removeNode(setting, node);
+                    view.removeNode(setting, node);
                     if (callbackFlag) {
                         this.setting.treeObj.trigger(this.consts.event.REMOVE, [setting.treeId, node]);
                     }
@@ -1822,39 +1823,39 @@
                     if (tools.uCanDo(setting)) {
                         addFlag = setting.view.selectedMulti && addFlag;
                         if (node.parentTreeId) {
-                            this.view.expandCollapseParentNode(setting, node.getParentNode(), true, false, showNodeFocus);
+                            view.expandCollapseParentNode(setting, node.getParentNode(), true, false, showNodeFocus);
                         } else if (!isSilent) {
                             try {
-                                document.getElementById(this.$(node, setting)).focus().blur();
+                                this.$(node, setting).focus().blur();
                             } catch (e) {
                             }
                         }
-                        this.view.selectNode(setting, node, addFlag);
+                        view.selectNode(setting, node, addFlag);
                     }
 
                     function showNodeFocus() {
                         if (isSilent) {
                             return;
                         }
-                        var a = $$(node, setting).get(0);
+                        var a = this.$(node, setting).get(0);
                         view.scrollIntoView(setting, a);
                     }
                 },
-                transformTozTreeNodes: function (simpleNodes) {
-                    return data.transformTozTreeFormat(setting, simpleNodes);
+                transformToqTreeNodes: function (simpleNodes) {
+                    return data.transformToqTreeFormat(setting, simpleNodes);
                 },
                 transformToArray: function (nodes) {
                     return data.transformToArrayFormat(setting, nodes);
                 },
                 updateNode: function (node, checkTypeFlag) {
                     if (!node) return;
-                    var nObj = $$(node, setting);
+                    var nObj = this.$(node, setting);
                     if (nObj.get(0) && tools.uCanDo(setting)) {
-                        this.view.setNodeName(setting, node);
-                        this.view.setNodeTarget(setting, node);
-                        this.view.setNodeUrl(setting, node);
-                        this.view.setNodeLineIcos(setting, node);
-                        this.view.setNodeFontCss(setting, node);
+                        view.setNodeName(setting, node);
+                        view.setNodeTarget(setting, node);
+                        view.setNodeUrl(setting, node);
+                        view.setNodeLineIcons(setting, node);
+                        view.setNodeFontCss(setting, node);
                     }
                 }
             };
@@ -1883,13 +1884,22 @@
     }
     };
 
+    var qt = new QTree(),
+        tools = qt._z.tools,
+        consts = qt._consts,
+        view = qt._z.view,
+        data = qt._z.data,
+        treeEvents = qt._z.treeEvents,
+        _init = qt._init;
+
+
 	// 最后将插件对象暴露给全局对象
     _global = (function(){ return this || (0, eval)('this'); }());
     if (typeof module !== "undefined" && module.exports) {
-        module.exports = qTree;
+        module.exports = QTree;
     } else if (typeof define === "function" && define.amd) {
-        define(function(){return qTree;});
+        define(function(){return QTree;});
     } else {
-        !('qTree' in _global) && (_global.qTree = qTree);
+        !('QTree' in _global) && (_global.QTree = QTree);
     }
 }());
