@@ -3,7 +3,7 @@ ul {
     padding: 0;
 }
 #show{
-    width: 200px;
+    width: 260px;
     height: 600px;
     overflow: auto;
     border: 1px solid #555555;
@@ -12,10 +12,13 @@ ul {
     overflow: auto;
     height: 600px;
 }
+.btn_show {
+    display: block;
+}
 .qTree,
 .qTree_level{
-    margin: 5px;
-    width: 260px;
+    margin: 0 5px;
+    width: auto;
 }
 .qTree_level{
     padding: 0 0 0 18px;
@@ -26,9 +29,10 @@ ul {
     white-space: nowrap;
     text-align: left;
     float: left;
+    padding-top: 3px;
 }
 .qTree_node_content{
-    width: 90%;
+    width: auto;
     display: inline-block;
     /*margin-left: 10px;*/
     vertical-align: middle;
@@ -45,11 +49,14 @@ ul {
 }
 .qTree_add_btn,
 .qTree_edit_btn,
-.qTree_delete_btn {
+.qTree_delete_btn,
+.qTree_level_up_btn,
+.qTree_level_down_btn{
     height: 16px;
     width: 16px;
     margin: 0 1px;
     display: inline-block;
+    vertical-align: middle;
 }
 .qTree_nodeType_img {
     width: 16px;
@@ -58,12 +65,14 @@ ul {
     cursor: pointer;
     outline: none;
     margin: 0;
+    vertical-align: bottom;
     background: url(../images/file.png) round scroll;
 }
 .qTree_name{
     width: 90%;
     padding-left: 5px;
     white-space: nowrap;
+    vertical-align: middle;
 }
 .qTree_node_btn{
     width: 60px;
@@ -73,8 +82,14 @@ ul {
     background: url("../images/add.png") round scroll;
 }
 .qTree_edit_btn{
-    background: url("../images/add.png") round scroll;
+    background: url("../images/edit.png") round scroll;
 }
 .qTree_delete_btn{
     background: url("../images/delete.png") round scroll;
  }
+.qTree_level_up_btn {
+    background: url("../images/level-up.png") round scroll;
+}
+.qTree_level_down_btn {
+    background: url("../images/level-down.png") round scroll;
+}
