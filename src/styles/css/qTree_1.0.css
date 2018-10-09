@@ -34,7 +34,7 @@ ul {
 .qTree_node_content{
     width: auto;
     display: inline-block;
-    /*margin-left: 10px;*/
+    margin-left: 10px;
     vertical-align: middle;
 }
 .btn_expand{
@@ -57,8 +57,9 @@ ul {
     margin: 0 1px;
     display: inline-block;
     vertical-align: middle;
+    cursor: pointer;
 }
-.qTree_nodeType_img {
+.qTree_img {
     width: 16px;
     height: 16px;
     display: inline-block;
@@ -66,10 +67,16 @@ ul {
     outline: none;
     margin: 0;
     vertical-align: bottom;
+}
+.qTree_folder_img {
+    background: url(../images/folder-open.png) round scroll;
+}
+.qTree_file_img {
     background: url(../images/file.png) round scroll;
 }
 .qTree_name{
     width: 90%;
+    color: #135443;
     padding-left: 5px;
     white-space: nowrap;
     vertical-align: middle;

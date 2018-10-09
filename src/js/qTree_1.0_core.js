@@ -1,3 +1,4 @@
+/*
 ;(function(undefined){
 	"use strict"
 	var _global;
@@ -133,7 +134,7 @@
 			innerAfterA: [],
             qTreeTools: []
 		},
-	    /****************** 定义赋值 ******************/
+	    /!****************** 定义赋值 ******************!/
         this.consts = this._consts,
 	    this._z = {
 	        tools: this.tools,
@@ -240,7 +241,7 @@
         },
         // methods of data
         data : {
-            /************************ 添加 ********************/
+            /!************************ 添加 ********************!/
             // cache of node
             addNodeCache: function (setting, node) {
                 this.getCache(setting).nodes[this.getNodeCacheId(node.treeId)] = node;
@@ -308,7 +309,7 @@
                     root.curSelectedList.push(node);
                 }
             },
-            /************************ 获取 ********************/
+            /!************************ 获取 ********************!/
             getAfterA: function (setting, node, array) {
                 for (var i = 0, j = this._init.afterA.length; i < j; i++){
                     this._init.afterA[i].apply(this,arguments);
@@ -444,10 +445,10 @@
                 return "" + node[t];
             },
 
-            /*
+            /!*
             * 查询节点信息
-            * */
-            /* 全部匹配 */
+            * *!/
+            /!* 全部匹配 *!/
             // 一个个的出结果
             getNodeByParam: function (setting, nodes, key, value) {
                 if (!nodes || !key) return null;
@@ -476,7 +477,7 @@
                 }
                 return result;
             },
-            /* 模糊匹配 */
+            /!* 模糊匹配 *!/
             getNodesByParamFuzzy: function (setting, nodes, key, value) {
                 if (!nodes || !key) return [];
                 var result = [];
@@ -491,7 +492,7 @@
                 }
                 return result;
             },
-            /* 根据条件查询 */
+            /!* 根据条件查询 *!/
             getNodesByFilter: function (setting, nodes, filter, isSingle, invokeParam) {
                 if (!nodes) return (isSingle ? null : []);
                 var result = isSingle ? null : [];
@@ -516,7 +517,7 @@
                 var root = this.getRoot(this.getSetting(treeId));
                 return root ? root.treeTools : null;
             },
-            /************************ 初始化 ********************/
+            /!************************ 初始化 ********************!/
             initCache: function (setting) {
                 for (var i = 0; i< this._init.caches.length; i++){
                     this._init.caches[i].apply(this, arguments);
@@ -532,14 +533,14 @@
                     _init.roots[i].apply(this, arguments);
                 }
             },
-            /************************ 判断 ********************/
+            /!************************ 判断 ********************!/
             isSelectedNode: function (setting, node) {
                 var root = this.getRoot(setting);
                 for (var i = 0; i < root.curSelectedList.length; i++){
                     if (node === root.curSelectedList[i]) return true;
                 }
             },
-            /************************ 操作 ********************/
+            /!************************ 操作 ********************!/
             // 删除
             removeSelectedNode: function (setting, node) {
                 var root = this.getRoot(setting);
@@ -1003,7 +1004,7 @@
                     }
                 };
                 xhr.send(setting.async.contentType.indexOf('application/json') > -1 ? JSON.stringify(tmpParam) : tmpParam);
-                /*$.ajax({
+                /!*$.ajax({
                     contentType: setting.async.contentType,
                     cache: false,
                     type: setting.async.type,
@@ -1051,7 +1052,7 @@
                         this.view.setNodeLineIcos(setting, node);
                         setting.treeObj.trigger(this.consts.event.ASYNC_ERROR, [setting.treeId, node, XMLHttpRequest, textStatus, errorThrown]);
                     }
-                });*/
+                });*!/
                 return true;
             },
             cancelPreSelectedNode: function (setting, node, excludeNode) {
@@ -1902,4 +1903,4 @@
     } else {
         !('QTree' in _global) && (_global.QTree = QTree);
     }
-}());
+}());*/
