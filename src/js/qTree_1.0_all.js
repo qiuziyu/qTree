@@ -180,7 +180,7 @@
         _bindEvent: function (setting) {
             var obj = setting.treeObj;
             var eventName = QTree.prototype._consts.event;
-            document.getElementsByClassName('qTree_node_content').addEventListener("click", function (event, setting, treeId, node, clickFlag) {
+            target.addEventListener("click", function (event, setting, treeId, node, clickFlag) {
                 var target = event.target;
                 console.log(target);
             });
@@ -195,14 +195,14 @@
             });
         },
         treeEvents: {
-            bindEvent: function (setting) {
+            bindEvent: function (setting,event) {
                 for (var i = 0; i < 1; i++) {
-                    QTree.prototype._bindEvent(setting, treeId, node, clickFlag);
+                    QTree.prototype._bindEvent(setting, event);
                 }
             },
             unbindEvent: function (setting) {
                 for (var i = 0; i < 1; i++) {
-                    QTree.prototype._unbindEvent(setting, treeId, node, clickFlag);
+                    QTree.prototype._unbindEvent(setting);
                 }
             }
         },
@@ -447,7 +447,7 @@
             var treeTools = {
 
             };
-            QTree.prototype._bindEvent(setting);
+            QTree.prototype.treeEvents.bindEvent(setting);
         },
         destroy: function () {
             
