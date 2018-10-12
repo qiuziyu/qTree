@@ -73,6 +73,7 @@
 <script src="src/js/qTree_1.0_all.js"></script>
 <script type="text/javascript">
     var Tree = new QTree();
+    console.log(Tree);
     var tree = document.getElementById("testTree");
     var qNodes = [
         {id: 1, pId: 0, name: "[core] 基本功能 演示", type: "folder"},
@@ -117,7 +118,7 @@
         //     }
         // }
     };
-    tree = Tree.init( qNodes, tree, setting);
+    Tree.init( qNodes, tree, setting);
     console.log(tree);
     // var domHtml = document.getElementById("qTree_level1_2");
     // domHtml.addEventListener("click", function () {

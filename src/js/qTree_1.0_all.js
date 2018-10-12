@@ -4,6 +4,7 @@
 
 	//插件构造函数
 	function QTree(){
+
 	}
 
     QTree.prototype = {
@@ -31,6 +32,12 @@
                 root: "root",
                 level: "level",
                 tree: "qTree"
+            },
+            event: {
+                CLICK: "click",
+                EXPAND: "expand",
+                REMOVE: "remove",
+                NODECREATED: "nodeCreated"
             }
         },
         _setting : {
@@ -53,6 +60,30 @@
                     parentKey: "pId",
                     rootParentKey: ""
                 }
+            },
+            callback: {
+                // 判断在某个事件发生前的状态
+                beforeAsync: null,
+                beforeClick: null,
+                beforeDblClick: null,
+                beforeRightClick: null,
+                beforeMouseDown: null,
+                beforeMouseUp: null,
+                beforeExpand: null,
+                beforeCollapse: null,
+                beforeRemove: null,
+                // 判断事件发生状态
+                onAsyncError: null,
+                onAsyncSuccess: null,
+                onNodeCreated: null,
+                onClick: null,
+                onDblClick: null,
+                onRightClick: null,
+                onMouseDown: null,
+                onMouseUp: null,
+                onExpand: null,
+                onCollapse: null,
+                onRemove: null
             }
         },
         data : {
@@ -145,6 +176,35 @@
         },
         event : {
 
+        },
+        _bindEvent: function (setting) {
+            var obj = setting.treeObj;
+            var eventName = QTree.prototype._consts.event;
+            document.getElementsByClassName('qTree_node_content').addEventListener("click", function (event, setting, treeId, node, clickFlag) {
+                var target = event.target;
+                console.log(target);
+            });
+            obj.addEventListener(eventName.EXPAND, function (event, setting, treeId, node) {
+
+            });
+            obj.addEventListener(eventName.REMOVE, function (event, setting, treeId, node) {
+
+            });
+            obj.addEventListener(eventName.NODECREATED, function (event, setting, treeId, node) {
+
+            });
+        },
+        treeEvents: {
+            bindEvent: function (setting) {
+                for (var i = 0; i < 1; i++) {
+                    QTree.prototype._bindEvent(setting, treeId, node, clickFlag);
+                }
+            },
+            unbindEvent: function (setting) {
+                for (var i = 0; i < 1; i++) {
+                    QTree.prototype._unbindEvent(setting, treeId, node, clickFlag);
+                }
+            }
         },
         tools : {
             clone: function (obj) {
@@ -387,7 +447,7 @@
             var treeTools = {
 
             };
-
+            QTree.prototype._bindEvent(setting);
         },
         destroy: function () {
             
