@@ -33,12 +33,12 @@
                 level: "level",
                 tree: "qTree"
             },
-            event: {
-                CLICK: "click",
-                EXPAND: "expand",
-                REMOVE: "remove",
-                NODECREATED: "nodeCreated"
-            }
+            // event: {
+            //     CLICK: "click",
+            //     EXPAND: "expand",
+            //     REMOVE: "remove",
+            //     NODECREATED: "nodeCreated"
+            // }
         },
         _setting : {
             treeId: "",
@@ -51,7 +51,8 @@
                 showDeleteBtn: true,
                 showUpBtn: true,
                 showDownBtn: true,
-                showExpand: true
+                showExpand: true,
+                onEdit: false
             },
             data: {
                 simpleData: {
@@ -177,34 +178,70 @@
         event : {
 
         },
-        _bindEvent: function (setting) {
+        _bindEvent: function (setting, flag) {
             var obj = setting.treeObj;
-            var eventName = QTree.prototype._consts.event;
-            target.addEventListener("click", function (event, setting, treeId, node, clickFlag) {
+            var expandFlag = flag.onExpand;
+            obj.addEventListener("click", function (event) {
                 var target = event.target;
-                console.log(target);
-            });
-            obj.addEventListener(eventName.EXPAND, function (event, setting, treeId, node) {
-
-            });
-            obj.addEventListener(eventName.REMOVE, function (event, setting, treeId, node) {
-
-            });
-            obj.addEventListener(eventName.NODECREATED, function (event, setting, treeId, node) {
-
-            });
-        },
-        treeEvents: {
-            bindEvent: function (setting,event) {
-                for (var i = 0; i < 1; i++) {
-                    QTree.prototype._bindEvent(setting, event);
+                switch (target.className) {
+                    case "btn_expand" : onExpand();
+                    case "qTree_name" : onEdit();
+                    case "qTree_add_btn": nodeCreated();
+                    case "qTree_edit_btn": nodeEdit();
+                    case "qTree_delete_btn": nodeRemove();
+                    case "qTree_level_up_btn": nodeUp();
+                    case "qTree_level_down_btn": nodeDown();
                 }
-            },
-            unbindEvent: function (setting) {
-                for (var i = 0; i < 1; i++) {
-                    QTree.prototype._unbindEvent(setting);
+                function onClick() {
+                    if (!("qTree_node_content" === target.parentElement.className)){return null;}
+                    var parentDom = target.parentElement;
+                    if (obj.getElementsByClassName("nodeBackground").length > 0) {
+                        obj.getElementsByClassName("nodeBackground")[0].classList.remove("nodeBackground");
+                    }
+                    QTree.prototype.view.setColor(parentDom);
                 }
-            }
+                function onExpand() {
+                    // if (!(target.parentElement.lastChild.localName === "ul"))return null;
+                    var next = target.nextSibling.firstChild;
+                    var name = next.classList.toString().split(" ");
+                    if (!((target.parentElement.lastChild.localName === "ul") || ("qTree_folder_img" === name[1]) || ("qTree_folder_open_img" === name[1])))return null;
+                    var changeImg = target.nextSibling.childNodes[0];
+                    var childrenList = target.parentElement.lastChild;
+                    if (expandFlag === 0) {
+                        childrenList.style.display = "none";
+                        target.textContent = "+";
+                        changeImg.classList.remove("qTree_folder_img");
+                        changeImg.classList.add("qTree_folder_open_img");
+                        expandFlag ++;
+                    }else{
+                        childrenList.style.display = "block";
+                        target.textContent = "-";
+                        changeImg.classList.remove("qTree_folder_open_img");
+                        changeImg.classList.add("qTree_folder_img");
+                        expandFlag --;
+                    }
+                }
+                function onEdit() {
+                    if (!QTree.prototype._setting.view.onEdit) return null;
+
+                }
+                function nodeCreated() {
+
+                }
+                function nodeEdit() {
+
+                }
+                function nodeRemove() {
+
+                }
+                function nodeUp() {
+
+                }
+                function nodeDown() {
+
+                }
+                onClick();
+            });
         },
         tools : {
             clone: function (obj) {
@@ -232,23 +269,25 @@
                 var nodeBox = this.setNodeLi(parentDomId, index, num),
                     ul = this.setFolderUl(parentDomId, index + 1, num),
                     content = this.setNodeContent(nodeBox),
-                    expand = this.setExpand(nodeBox),
+                    btn = this.setNodeBtn(nodeBox),
+                    expand = this.setExpand(nodeBox, type),
                     imgDom = this.setImg(content, type),
                     nameDom = this.setNodeName(name),
-                    add = this.setAddBtn(nodeBox),
-                    edit = this.setEditBtn(nodeBox),
-                    del = this.setDeleteBtn(nodeBox),
-                    up = this.setUpBtn(nodeBox),
-                    down = this.setDownBtn(nodeBox);
+                    add = this.setAddBtn(btn),
+                    edit = this.setEditBtn(btn),
+                    del = this.setDeleteBtn(btn),
+                    up = this.setUpBtn(btn),
+                    down = this.setDownBtn(btn);
                 nodeBox.appendChild(expand);
                 content.appendChild(imgDom);
                 content.appendChild(nameDom);
                 nodeBox.appendChild(content);
-                nodeBox.appendChild(add);
-                nodeBox.appendChild(edit);
-                nodeBox.appendChild(del);
-                nodeBox.appendChild(up);
-                nodeBox.appendChild(down);
+                btn.appendChild(add);
+                btn.appendChild(edit);
+                btn.appendChild(del);
+                btn.appendChild(up);
+                btn.appendChild(down);
+                nodeBox.appendChild(btn);
                 switch (type) {
                     case "folder":
                         nodeBox.appendChild(ul);
@@ -262,12 +301,13 @@
             initRoot: function(parentDomId, name, i, type){
                 if(!parentDomId) return null;
                 var root = document.createElement("li"),
-                    expand = this.setExpand(root),
+                    expand = this.setExpand(root, type),
                     content = this.setNodeContent(root),
+                    btn = this.setNodeBtn(root),
                     imgDom = this.setImg(root, "folder"),
                     nameDom = this.setNodeName(name),
-                    add = this.setAddBtn(root),
-                    edit = this.setEditBtn(root),
+                    add = this.setAddBtn(btn),
+                    edit = this.setEditBtn(btn),
                     ul = this.setFolderUl(parentDomId, i+1, 0);
                 root.id = QTree.prototype._consts.id.tree + "_" +QTree.prototype._consts.id.root + i;
                 root.classList.add(QTree.prototype._consts.class.tree + "_" + QTree.prototype._consts.class.content);
@@ -275,8 +315,9 @@
                 content.appendChild(imgDom);
                 content.appendChild(nameDom);
                 root.appendChild(content);
-                root.appendChild(add);
-                root.appendChild(edit);
+                btn.appendChild(add);
+                btn.appendChild(edit);
+                root.appendChild(btn);
                 switch (type) {
                     case "folder":
                         root.appendChild(ul);
@@ -307,16 +348,26 @@
                 content.classList.add(QTree.prototype._consts.class.tree + "_" + QTree.prototype._consts.class.node + "_" + QTree.prototype._consts.class.content);
                 return content;
             },
+            setNodeBtn: function(parentDomId){
+                if (!parentDomId)return null;
+                var btn = document.createElement("span");
+                btn.classList.add(QTree.prototype._consts.class.tree + "_" + QTree.prototype._consts.class.node + "_" + QTree.prototype._consts.class.button);
+                return btn;
+            },
             setColor: function (parentDomId) {
                 // var parent = document.getElementById(parentDomId);
-                parentDomId.style.background = "#ddf7ef";
-                parentDomId.style.color = "#417556";
+                // parentDomId.style.background = "#ddf7ef";
+                // parentDomId.style.color = "#417556";
+                parentDomId.classList.add("nodeBackground");
             },
-            setExpand: function (parentDomId) {
+            setExpand: function (parentDomId, type) {
                 if (!parentDomId) return null;
                 var expand = document.createElement("span");
                 expand.classList.add(QTree.prototype._consts.class.button + "_" + QTree.prototype._consts.class.expand);
-                expand.innerHTML = "+";
+                expand.innerHTML = "-";
+                if (type === "file"){
+                    expand.style.display = "none";
+                }
                 return expand;
             },
             setAddBtn: function (parentDomId) {
@@ -444,10 +495,13 @@
             // 初始化根数据
             this.data.initNodeData(setting, data, ulBox);
             domBox.appendChild(ulBox);
+            var flag = {
+                onExpand: 0
+            };
             var treeTools = {
 
             };
-            QTree.prototype.treeEvents.bindEvent(setting);
+            QTree.prototype._bindEvent(setting, flag);
         },
         destroy: function () {
             

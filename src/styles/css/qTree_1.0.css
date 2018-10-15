@@ -34,7 +34,7 @@ ul {
 .qTree_node_content{
     width: auto;
     display: inline-block;
-    margin-left: 10px;
+    padding-left: 10px;
     vertical-align: middle;
 }
 .btn_expand{
@@ -71,6 +71,9 @@ ul {
 .qTree_folder_img {
     background: url(../images/folder-open.png) round scroll;
 }
+.qTree_folder_open_img{
+    background: url(../images/folder.png) round scroll;
+}
 .qTree_file_img {
     background: url(../images/file.png) round scroll;
 }
@@ -80,9 +83,10 @@ ul {
     padding-left: 5px;
     white-space: nowrap;
     vertical-align: middle;
+    cursor: pointer;
 }
 .qTree_node_btn{
-    width: 60px;
+    margin-left: 5px;
     display: inline-block;
 }
 .qTree_add_btn{
@@ -99,4 +103,12 @@ ul {
 }
 .qTree_level_down_btn {
     background: url("../images/level-down.png") round scroll;
+}
+
+
+
+/* 通用（后添加）*/
+.nodeBackground {
+    background : #ddf7ef;
+    color : #417556;
 }
